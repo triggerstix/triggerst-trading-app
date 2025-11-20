@@ -100,3 +100,15 @@ Mobile-first stock analysis app combining W.D. Gann geometric analysis with Rich
 - PDF export
 - Drawing tools on charts
 - Historical analysis archive
+
+## Phase 11: Integration with Old Platform
+- [x] Analyze old platform homepage structure and design
+- [x] Update Home.tsx to show 9 feature cards (8 existing + 1 new Stock Analysis)
+- [x] Add feature card for "Stock Analysis" with Gann+Ney description
+- [x] Create StockAnalysisSearch page as entry point
+- [x] Add route for /stock-analysis
+- [x] Ensure all navigation links work correctly
+- [x] Match styling with old platform's card design
+- [x] Test all 9 feature cards are clickable and functional
+- [x] Verify Stock Analysis tool works after integration
+- [x] Test complete user flow: Home → Stock Analysis → Search → Analysis

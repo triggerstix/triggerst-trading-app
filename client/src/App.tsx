@@ -6,11 +6,13 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import StockAnalysisNew from "./pages/StockAnalysisNew";
+import StockAnalysisSearch from "./pages/StockAnalysisSearch";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/stock-analysis"} component={StockAnalysisSearch} />
       <Route path={"/analyze/:symbol"} component={StockAnalysisNew} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
