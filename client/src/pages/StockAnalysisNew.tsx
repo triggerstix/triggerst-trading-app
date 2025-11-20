@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Share2, TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -11,27 +11,15 @@ export default function StockAnalysisNew() {
 
   const symbol = params?.symbol?.toUpperCase() || "AAPL";
 
-  // Example data for demonstration - in production, fetch from market data API
-  // Use useMemo to prevent infinite re-renders
-  const analysisInput = useMemo(() => ({
-    symbol,
-    startPrice: 50,
-    peakPrice: 100,
-    currentPrice: 90,
-    days: 180,
-    priceData: Array.from({ length: 60 }, (_, i) => ({
-      price: 50 + Math.random() * 50,
-      volume: 1000000 + Math.random() * 5000000,
-      date: new Date(Date.now() - (60 - i) * 24 * 60 * 60 * 1000).toISOString(),
-    })),
-  }), [symbol]);
-
-  // Fetch combined analysis from backend
-  const { data: analysis, isLoading, error } = trpc.analysis.analyze.useQuery(analysisInput, {
-    retry: 2,
-    retryDelay: 1000,
-    staleTime: 60000, // 1 minute
-  });
+  // Fetch real stock data and analysis from Yahoo Finance
+  const { data: analysis, isLoading, error } = trpc.analysis.analyzeStock.useQuery(
+    { symbol },
+    {
+      retry: 2,
+      retryDelay: 1000,
+      staleTime: 60000, // Cache for 1 minute
+    }
+  );
 
   const tabs = [
     { id: 0, name: "Overview", icon: "📊" },
@@ -120,7 +108,9 @@ export default function StockAnalysisNew() {
           </Button>
           <div className="text-center">
             <h1 className="text-xl font-bold">{symbol}</h1>
-            <p className="text-sm text-slate-400">${analysisInput.currentPrice.toFixed(2)}</p>
+            <p className="text-sm text-slate-400">
+              ${analysis?.stockInfo?.currentPrice?.toFixed(2) || "--"}
+            </p>
           </div>
           <Button
             variant="ghost"

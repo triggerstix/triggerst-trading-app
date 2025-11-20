@@ -8,6 +8,7 @@ import * as astroData from "./services/astroData";
 import { analyzeCombined } from "./analysis/combined";
 import { analyzeGann } from "./analysis/gann";
 import { analyzeNey } from "./analysis/ney";
+import * as stockData from "./services/stockData";
 
 export const appRouter = router({
   system: systemRouter,
@@ -66,6 +67,59 @@ export const appRouter = router({
   }),
 
   analysis: router({
+    // Analyze stock with real Yahoo Finance data
+    analyzeStock: publicProcedure
+      .input(z.object({
+        symbol: z.string(),
+      }))
+      .query(async ({ input }) => {
+        // Fetch historical data (1 year)
+        const chartData = await stockData.getHistoricalData(input.symbol, "1y", "1d");
+        
+        if (!chartData || chartData.historical.length === 0) {
+          throw new Error(`Unable to fetch data for symbol: ${input.symbol}`);
+        }
+
+        // Extract key data points
+        const historical = chartData.historical;
+        const currentPrice = chartData.meta.regularMarketPrice;
+        const peak = stockData.findPeakPrice(historical);
+        const start = stockData.findStartPrice(historical);
+        const tradingDays = stockData.calculateTradingDays(start.date, new Date());
+        
+        // Prepare price data for Ney analysis
+        const priceData = stockData.preparePriceDataForNey(historical);
+        
+        // Perform combined analysis
+        const analysis = analyzeCombined(
+          start.price,
+          peak.price,
+          currentPrice,
+          tradingDays,
+          priceData.map(d => ({
+            ...d,
+            date: new Date(d.date),
+          }))
+        );
+        
+        return {
+          ...analysis,
+          stockInfo: {
+            symbol: chartData.symbol,
+            currentPrice,
+            currency: chartData.meta.currency,
+            exchange: chartData.meta.exchangeName,
+            high52Week: chartData.meta.fiftyTwoWeekHigh,
+            low52Week: chartData.meta.fiftyTwoWeekLow,
+            peakPrice: peak.price,
+            peakDate: peak.date.toISOString(),
+            startPrice: start.price,
+            startDate: start.date.toISOString(),
+            tradingDays,
+          },
+        };
+      }),
+
     // Combined Gann + Ney analysis for a stock
     analyze: publicProcedure
       .input(z.object({
