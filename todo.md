@@ -1,24 +1,126 @@
-# Trading Tools App - Development TODO
+# Triggerstix - Development TODO
 
 ## Project Overview
-Mobile-first stock analysis app combining W.D. Gann geometric analysis with Richard Ney specialist/volume analysis.
+Building a comprehensive Trader Edition combining W.D. Gann geometric analysis with Richard Ney specialist/volume analysis, interactive charts, and options trading integration.
 
-## Phase 1: Project Setup
+## Current Status
+- ✅ 9-feature homepage (8 placeholders + 1 working Stock Analysis)
+- ✅ Gann+Ney analysis engine with 34 passing tests
+- ✅ Real Yahoo Finance data integration
+- 🎯 **Next: Build Trader Edition MVP**
+
+---
+
+## Phase 1: Safeguard Infrastructure Setup
+- [x] Create CHANGELOG.md for tracking all changes
+- [x] Create session summary template (session-YYYY-MM-DD.md)
+- [x] Document safeguard strategy in README
+- [x] Set up incremental checkpoint workflow
+- [ ] Save checkpoint: "Safeguard infrastructure complete"
+
+## Phase 2: October Code Review
+- [ ] Extract CreateTradingAppcodefiles.zip
+- [ ] Extract CreateTradingAppdocuments.zip
+- [ ] Extract CreateTradingAppimages.zip
+- [ ] Review original 6-feature platform structure
+- [ ] Document drawing tools implementation (trendlines, Fibonacci, horizontal lines)
+- [ ] Compare October vs November architecture
+- [ ] Create comparison document (october-vs-november.md)
+- [ ] Save checkpoint: "October code review complete"
+
+## Phase 3: Merge Drawing Tools
+- [ ] Extract DrawingTools.tsx from October code
+- [ ] Extract WebullChart.tsx from October code
+- [ ] Review technical indicators implementation (SMA, EMA, Bollinger Bands)
+- [ ] Merge drawing tools into current codebase
+- [ ] Test drawing tools work with current data
+- [ ] Write tests for drawing functionality
+- [ ] Save checkpoint: "Drawing tools merged"
+
+## Phase 4: TradingView Charts Integration
+- [ ] Install @tradingview/lightweight-charts
+- [ ] Create TradingViewChart component
+- [ ] Implement candlestick chart with real data
+- [ ] Add zoom and pan controls
+- [ ] Add volume chart overlay
+- [ ] Test with multiple symbols (AAPL, BTC-USD, NVDA)
+- [ ] Write tests for chart component
+- [ ] Save checkpoint: "TradingView charts integrated"
+
+## Phase 5: Gann Angle Drawing Tool
+- [ ] Add pivot point selection (click on chart)
+- [ ] Calculate Gann fan angles (1x1, 2x1, 4x1, 8x1, etc.)
+- [ ] Draw angle lines on chart
+- [ ] Add angle labels with degrees
+- [ ] Add toggle to show/hide Gann angles
+- [ ] Add clear all drawings button
+- [ ] Test drawing accuracy
+- [ ] Save checkpoint: "Gann angle drawing tool complete"
+
+## Phase 6: Options Chain Integration
+- [ ] Research Yahoo Finance options data API
+- [ ] Create options data service (server/services/optionsData.ts)
+- [ ] Fetch options chain for given symbol
+- [ ] Calculate Greeks (Delta, Gamma, Theta, Vega, Rho)
+- [ ] Create tRPC procedure for options data
+- [ ] Display options chain in new tab
+- [ ] Highlight recommended strikes at Gann levels
+- [ ] Add strategy recommendations based on Ney phases
+- [ ] Write tests for options service
+- [ ] Save checkpoint: "Options chain integrated"
+
+## Phase 7: Watchlist & Alerts
+- [ ] Create watchlist database schema
+- [ ] Add watchlist UI component
+- [ ] Implement add/remove from watchlist
+- [ ] Create price alert system
+- [ ] Add Gann level alerts
+- [ ] Add Ney phase change alerts
+- [ ] Implement notification system
+- [ ] Test alert triggering
+- [ ] Save checkpoint: "Watchlist and alerts complete"
+
+## Phase 8: Trader Edition UI/UX Polish
+- [ ] Implement dark theme for all trader tools
+- [ ] Optimize for mobile (touch-friendly controls)
+- [ ] Add loading states for all data fetching
+- [ ] Improve error handling and messages
+- [ ] Add empty states
+- [ ] Add tooltips and help text
+- [ ] Test on different screen sizes
+- [ ] Save checkpoint: "UI/UX polish complete"
+
+## Phase 9: Testing & Deployment
+- [ ] Run all tests (target: 50+ passing)
+- [ ] Test complete user flow
+- [ ] Test with multiple stocks/crypto
+- [ ] Test options chain accuracy
+- [ ] Test drawing tools persistence
+- [ ] Test alerts and notifications
+- [ ] Fix any bugs found
+- [ ] Create final checkpoint
+- [ ] Document all features
+- [ ] Deliver to user
+
+---
+
+## Completed Features (From Previous Phases)
+
+### Phase 1: Project Setup ✅
 - [x] Initialize project structure
 - [x] Project restored from checkpoint
 - [x] Create todo.md
 - [x] Verify all dependencies installed
 
-## Phase 2: Backend Analysis Engine
+### Phase 2: Backend Analysis Engine ✅
 - [x] Add Gann analysis module (server/analysis/gann.ts)
 - [x] Add Ney analysis module (server/analysis/ney.ts)
 - [x] Add combined analysis module (server/analysis/combined.ts)
-- [ ] Add stock data fetching (server/stock-data.ts)
 - [x] Create tRPC procedures for analysis API
 - [x] Test backend calculations with sample data
 - [x] Write vitest tests (21 tests passing)
 
-## Phase 3: Mobile-First UI Components
+### Phase 3: Mobile-First UI Components ✅
 - [x] Update App.tsx for mobile-first layout
 - [x] Create Home screen with stock search
 - [x] Create StockAnalysisNew page with real backend integration
@@ -28,10 +130,9 @@ Mobile-first stock analysis app combining W.D. Gann geometric analysis with Rich
 - [x] Create Forecast tab with 3 scenarios
 - [x] Connect frontend to tRPC backend
 - [x] Fix infinite loading loop with useMemo
-- [ ] Add swipeable tabs functionality
 - [x] Style with dark theme (#0a0e27)
 
-## Phase 4: Real-Time Stock Data Integration
+### Phase 4: Real-Time Stock Data Integration ✅
 - [x] Create stock data service (server/services/stockData.ts)
 - [x] Integrate Yahoo Finance API via Manus Data API Hub
 - [x] Create analyzeStock tRPC procedure
@@ -41,67 +142,7 @@ Mobile-first stock analysis app combining W.D. Gann geometric analysis with Rich
 - [x] Verify real-time price fetching
 - [x] Verify historical data (1-year) fetching
 
-## Phase 5: Chart Integration
-- [ ] Install TradingView Lightweight Charts
-- [ ] Create interactive chart component
-- [ ] Add Gann angle overlays
-- [ ] Add Square of Nine level markers
-- [ ] Add Ney phase zone highlights
-- [ ] Add volume bars
-- [ ] Make chart touch-friendly (pinch zoom, pan)
-
-## Phase 6: Swipeable Tabs
-- [ ] Install react-swipeable or similar
-- [ ] Add touch gesture handlers
-- [ ] Enable left/right swipe between tabs
-- [ ] Add visual swipe indicators
-- [ ] Test on mobile devices
-
-## Phase 7: Enhanced Features
-- [ ] Add watchlist functionality
-- [ ] Implement price alerts
-- [ ] Add share analysis feature
-- [ ] Create analysis history
-- [ ] Add export to PDF
-- [ ] Implement dark/light theme toggle
-
-## Phase 8: Polish & UX
-- [x] Add loading spinners
-- [ ] Improve error messages
-- [ ] Add empty states
-- [ ] Optimize for mobile touch
-- [ ] Test on different screen sizes
-- [ ] Add share functionality
-- [ ] Update recent analyses with real data
-
-## Phase 9: Testing
-- [x] Test with AAPL
-- [x] Test with BTC-USD
-- [ ] Test with PLTR
-- [ ] Test with invalid symbols
-- [ ] Test API error handling
-- [ ] Test on mobile device
-- [ ] Fix any bugs found
-
-## Phase 10: Deployment
-- [ ] Save checkpoint
-- [ ] Test deployed version
-- [ ] Document features
-- [ ] Deliver to user
-
-## Known Issues
-- None yet
-
-## Future Enhancements (Post-MVP)
-- User authentication
-- Watchlist feature
-- Compare multiple stocks
-- Price alerts
-- PDF export
-- Drawing tools on charts
-- Historical analysis archive
-
-## Phase 11: Integration with Old Platform
+### Phase 11: Integration with Old Platform ✅
 - [x] Analyze old platform homepage structure and design
 - [x] Update Home.tsx to show 9 feature cards (8 existing + 1 new Stock Analysis)
 - [x] Add feature card for "Stock Analysis" with Gann+Ney description
@@ -112,3 +153,25 @@ Mobile-first stock analysis app combining W.D. Gann geometric analysis with Rich
 - [x] Test all 9 feature cards are clickable and functional
 - [x] Verify Stock Analysis tool works after integration
 - [x] Test complete user flow: Home → Stock Analysis → Search → Analysis
+
+---
+
+## Known Issues
+- None currently
+
+## Future Enhancements (Post-Trader Edition MVP)
+- Investor Edition (long-term analysis, fundamentals, portfolio tracking)
+- Backtesting engine
+- Strategy performance tracking
+- Social features (share analyses)
+- Advanced scanning tools
+- Custom indicator builder
+- API access for developers
+
+## Phase 0: Rebrand to Triggerstix
+- [x] Update package.json name to "triggerstix"
+- [ ] Update VITE_APP_TITLE to "Triggerstix" (requires Settings UI - manual)
+- [x] Update all documentation references
+- [x] Create README.md
+- [x] Update todo.md header
+- [ ] Save checkpoint: "Rebranded to Triggerstix"
