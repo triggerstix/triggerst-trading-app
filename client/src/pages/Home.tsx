@@ -1,239 +1,201 @@
+import { useState } from "react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  TrendingUp, 
-  Activity, 
-  Grid3x3, 
-  Clock, 
-  Moon, 
-  BarChart3, 
-  LineChart, 
-  Pencil,
-  Target
-} from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 
+/**
+ * Triggerstix - Webull-style Trading Interface
+ * Chart-first layout with Gann+Ney analysis
+ */
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const [symbol, setSymbol] = useState("");
 
-  const features = [
-    {
-      id: "market-data",
-      title: "Market Data",
-      description: "Real-time market data and price tracking for multiple symbols",
-      icon: Activity,
-      path: "/market-data",
-      color: "text-blue-400",
-    },
-    {
-      id: "gann-angles",
-      title: "Gann Angles & Charts",
-      description: "Calculate and visualize Gann angles from pivot points",
-      icon: TrendingUp,
-      path: "/gann-angles",
-      color: "text-green-400",
-    },
-    {
-      id: "square-of-nine",
-      title: "Square of Nine",
-      description: "Interactive Square of Nine calculator for price and time analysis",
-      icon: Grid3x3,
-      path: "/square-of-nine",
-      color: "text-purple-400",
-    },
-    {
-      id: "time-cycles",
-      title: "Time Cycles",
-      description: "Analyze market cycles and time-based patterns",
-      icon: Clock,
-      path: "/time-cycles",
-      color: "text-orange-400",
-    },
-    {
-      id: "astrological",
-      title: "Astrological Analysis",
-      description: "Lunar phases, planetary positions, and astrological aspects",
-      icon: Moon,
-      path: "/astrological",
-      color: "text-indigo-400",
-    },
-    {
-      id: "historical-charts",
-      title: "Historical Charts",
-      description: "View historical price data with technical indicators",
-      icon: BarChart3,
-      path: "/historical-charts",
-      color: "text-cyan-400",
-    },
-    {
-      id: "interactive-chart",
-      title: "Interactive Gann Chart",
-      description: "Live market data with interactive Gann angle overlays and real-time analysis",
-      icon: LineChart,
-      path: "/interactive-chart",
-      color: "text-emerald-400",
-    },
-    {
-      id: "drafting-machine",
-      title: "Gann Drafting Machine",
-      description: "Upload chart images and overlay Gann angles, hexagons, and geometric patterns",
-      icon: Pencil,
-      path: "/drafting-machine",
-      color: "text-pink-400",
-    },
-    {
-      id: "stock-analysis",
-      title: "Stock Analysis",
-      description: "Combined Gann + Ney analysis with risk assessment and trading recommendations",
-      icon: Target,
-      path: "/stock-analysis",
-      color: "text-yellow-400",
-    },
+  const popularSymbols = [
+    { symbol: "AAPL", name: "Apple" },
+    { symbol: "NVDA", name: "NVIDIA" },
+    { symbol: "TSLA", name: "Tesla" },
+    { symbol: "MSFT", name: "Microsoft" },
+    { symbol: "BTC-USD", name: "Bitcoin" },
+    { symbol: "ETH-USD", name: "Ethereum" },
   ];
+
+  const handleAnalyze = (sym: string) => {
+    if (sym) {
+      setLocation(`/chart/${sym.toUpperCase()}`);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleAnalyze(symbol);
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
       {/* Header */}
-      <header className="border-b border-slate-800">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-blue-400" />
-              <h1 className="text-xl font-bold">W.D. Gann Trading Platform</h1>
+      <header className="border-b border-slate-800 bg-[#0d1129]">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+              Triggerstix
             </div>
-            {isAuthenticated ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-400">
-                  {user?.name || user?.email || "User"}
-                </span>
-                <Button variant="ghost" size="sm">
-                  Settings
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                onClick={() => window.location.href = getLoginUrl()}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Login
-              </Button>
-            )}
+            <div className="text-sm text-slate-400 hidden md:block">
+              Your Trading Signal
+            </div>
           </div>
+          
+          {/* Search Bar */}
+          <form onSubmit={handleSubmit} className="flex-1 max-w-md mx-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search symbol (e.g., AAPL, BTC-USD)"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                className="pl-10 bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+              />
+            </div>
+          </form>
+
+          <Button 
+            onClick={() => handleAnalyze(symbol)}
+            disabled={!symbol}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Analyze
+          </Button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto text-center max-w-4xl">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Master the Markets with W.D. Gann Methods
-          </h2>
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            Find Your Entry Point
+          </h1>
           <p className="text-xl text-slate-300 mb-8">
-            A comprehensive trading platform implementing all of W.D. Gann's legendary trading 
-            methodologies including Gann Angles, Square of Nine, Time Cycles, and Astrological Analysis.
+            Professional trading analysis combining W.D. Gann's geometric methods with Richard Ney's specialist behavior patterns
           </p>
-          <div className="flex gap-4 justify-center">
-            <Button 
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-lg px-8"
-              onClick={() => setLocation("/stock-analysis")}
-            >
-              Get Started
-            </Button>
-            <Button 
-              size="lg"
-              variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-800 text-lg px-8"
-            >
-              Explore Features
-            </Button>
-          </div>
-        </div>
-      </section>
 
-      {/* Features Grid */}
-      <section className="py-16 px-4 bg-slate-900/30">
-        <div className="container mx-auto">
-          <h3 className="text-3xl font-bold text-center mb-12">
-            Complete Gann Trading Toolkit
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <Card
-                  key={feature.id}
-                  className="bg-slate-800/50 border-slate-700 hover:bg-slate-800 hover:border-slate-600 transition-all cursor-pointer group"
-                  onClick={() => setLocation(feature.path)}
+          {/* Search */}
+          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mb-12">
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Enter stock symbol (AAPL, NVDA, BTC-USD...)"
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value)}
+                  className="pl-12 h-14 text-lg bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                />
+              </div>
+              <Button 
+                type="submit"
+                disabled={!symbol}
+                className="h-14 px-8 text-lg bg-blue-600 hover:bg-blue-700"
+              >
+                Analyze
+              </Button>
+            </div>
+          </form>
+
+          {/* Popular Symbols */}
+          <div className="mb-16">
+            <p className="text-sm text-slate-400 mb-4">Popular symbols:</p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {popularSymbols.map((item) => (
+                <button
+                  key={item.symbol}
+                  onClick={() => handleAnalyze(item.symbol)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
                 >
-                  <CardHeader>
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg bg-slate-900/50 ${feature.color}`}>
-                        <Icon className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-white text-lg mb-2 group-hover:text-blue-400 transition-colors">
-                          {feature.title}
-                        </CardTitle>
-                        <CardDescription className="text-slate-400 text-sm">
-                          {feature.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              );
-            })}
+                  <span className="font-semibold text-blue-400">{item.symbol}</span>
+                  <span className="text-slate-400 text-sm ml-2">{item.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* About Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <Card className="bg-slate-800/30 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white text-2xl">About W.D. Gann</CardTitle>
-            </CardHeader>
-            <CardContent className="text-slate-300 space-y-4">
-              <p>
-                William Delbert Gann (1878-1955) was one of the most successful traders of all time. 
-                He developed unique trading techniques based on geometry, astronomy, astrology, and 
-                ancient mathematics.
-              </p>
-              <p className="font-semibold text-white">
-                This platform implements Gann's core methodologies:
-              </p>
-              <ul className="space-y-2 ml-6">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
-                  <span><strong className="text-white">Gann Angles:</strong> Geometric price and time relationships</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
-                  <span><strong className="text-white">Square of Nine:</strong> Mathematical price calculator based on square root relationships</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
-                  <span><strong className="text-white">Time Cycles:</strong> Natural market cycles and turning points</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
-                  <span><strong className="text-white">Astrological Analysis:</strong> Planetary influences on market behavior</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {/* Feature 1 */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div className="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Interactive Charts</h3>
+            <p className="text-slate-400">
+              Professional candlestick charts with drawing tools, Gann angles, and technical indicators
+            </p>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div className="w-12 h-12 bg-cyan-600/20 rounded-lg flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Gann + Ney Analysis</h3>
+            <p className="text-slate-400">
+              Combined geometric analysis and specialist behavior patterns for high-probability setups
+            </p>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div className="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Real-Time Signals</h3>
+            <p className="text-slate-400">
+              Clear BUY/SELL/HOLD recommendations with price targets and stop-loss levels
+            </p>
+          </div>
         </div>
-      </section>
+
+        {/* How It Works */}
+        <div className="mt-20 max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-3 text-blue-400">W.D. Gann Analysis</h3>
+              <ul className="space-y-2 text-slate-300">
+                <li>• Geometric angles (1x1, 2x1, 4x1, 8x1)</li>
+                <li>• Square of Nine support/resistance</li>
+                <li>• Time and price relationships</li>
+                <li>• Sustainable price calculations</li>
+              </ul>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-3 text-cyan-400">Richard Ney Analysis</h3>
+              <ul className="space-y-2 text-slate-300">
+                <li>• Market phase detection (4 phases)</li>
+                <li>• Specialist behavior patterns</li>
+                <li>• Volume analysis</li>
+                <li>• Institutional buying/selling signals</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 py-8 px-4">
-        <div className="container mx-auto text-center text-slate-500 text-sm">
-          <p>© 2024 W.D. Gann Trading Platform. For educational purposes only.</p>
+      <footer className="border-t border-slate-800 bg-[#0d1129] mt-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center text-slate-400 text-sm">
+            <p>Triggerstix - Where Geometry Meets Volume</p>
+            <p className="mt-2">Professional trading analysis for serious traders</p>
+          </div>
         </div>
       </footer>
     </div>

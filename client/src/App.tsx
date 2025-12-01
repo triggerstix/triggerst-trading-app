@@ -5,16 +5,16 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import ChartView from "./pages/ChartView";
 import StockAnalysisNew from "./pages/StockAnalysisNew";
 import StockAnalysisSearch from "./pages/StockAnalysisSearch";
 
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/stock-analysis"} component={StockAnalysisSearch} />
-      <Route path={"/analyze/:symbol"} component={StockAnalysisNew} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/" component={Home} />
+      <Route path="/chart/:symbol" component={ChartView} />
+      <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
