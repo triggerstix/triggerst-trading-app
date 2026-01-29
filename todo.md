@@ -282,3 +282,9 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 - [x] Test all PDF export formats (all 34 tests passing)
 - [x] Final QA and polish
 - [ ] Save checkpoint: "Full functionality complete"
+
+
+## Phase 20: Restore Section Content
+- [x] Restore "How It Works" section content (keep the two-column grid)
+- [x] Remove only the "How It Works" heading text
+- [ ] Save checkpoint: "Section content restored"
