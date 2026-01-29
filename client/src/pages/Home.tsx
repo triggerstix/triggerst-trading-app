@@ -27,17 +27,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-[#0d1129]">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
-              Triggerstix Trading Analysis
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
