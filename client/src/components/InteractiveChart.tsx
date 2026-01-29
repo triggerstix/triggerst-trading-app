@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, CandlestickData, Time } from 'lightweight-charts';
+import { Pencil, TrendingUp, Trash2 } from 'lucide-react';
 
 interface ChartData {
   time: string;
@@ -30,6 +31,9 @@ export default function InteractiveChart({
   const candlestickSeriesRef = useRef<any>(null);
   const volumeSeriesRef = useRef<any>(null);
   const [showVolume, setShowVolume] = useState(true);
+  const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci'>('none');
+  const [drawings, setDrawings] = useState<any[]>([]);
+  const [drawingStart, setDrawingStart] = useState<{ time: number; price: number } | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -162,11 +166,37 @@ export default function InteractiveChart({
 
     window.addEventListener('resize', handleResize);
 
+    // Drawing functionality
+    const handleChartClick = (param: any) => {
+      if (drawingMode === 'none' || !param.point || !param.time) return;
+
+      const price = candlestickSeries.coordinateToPrice(param.point.y);
+      const time = param.time;
+
+      if (!drawingStart) {
+        // First click - start drawing
+        setDrawingStart({ time, price });
+      } else {
+        // Second click - complete drawing
+        const newDrawing = {
+          type: drawingMode,
+          start: drawingStart,
+          end: { time, price },
+        };
+        setDrawings(prev => [...prev, newDrawing]);
+        setDrawingStart(null);
+        setDrawingMode('none');
+      }
+    };
+
+    chart.subscribeClick(handleChartClick);
+
     return () => {
       window.removeEventListener('resize', handleResize);
+      chart.unsubscribeClick(handleChartClick);
       chart.remove();
     };
-  }, [data, currentPrice, supportLevels, resistanceLevels]);
+  }, [data, currentPrice, supportLevels, resistanceLevels, drawingMode, drawingStart]);
 
   useEffect(() => {
     if (volumeSeriesRef.current) {
@@ -175,6 +205,53 @@ export default function InteractiveChart({
       });
     }
   }, [showVolume]);
+
+  // Render drawings
+  useEffect(() => {
+    if (!candlestickSeriesRef.current || !chartRef.current) return;
+
+    drawings.forEach(drawing => {
+      if (drawing.type === 'trendline') {
+        // Draw trendline
+        const series = (chartRef.current as any).addLineSeries({
+          color: '#06b6d4',
+          lineWidth: 2,
+          priceLineVisible: false,
+          lastValueVisible: false,
+        });
+        series.setData([
+          { time: drawing.start.time, value: drawing.start.price },
+          { time: drawing.end.time, value: drawing.end.price },
+        ]);
+      } else if (drawing.type === 'fibonacci') {
+        // Draw Fibonacci retracement levels
+        const high = Math.max(drawing.start.price, drawing.end.price);
+        const low = Math.min(drawing.start.price, drawing.end.price);
+        const diff = high - low;
+
+        const fibLevels = [
+          { level: 0, label: '0%', color: '#64748b' },
+          { level: 0.236, label: '23.6%', color: '#8b5cf6' },
+          { level: 0.382, label: '38.2%', color: '#a855f7' },
+          { level: 0.5, label: '50%', color: '#c026d3' },
+          { level: 0.618, label: '61.8%', color: '#d946ef' },
+          { level: 1, label: '100%', color: '#64748b' },
+        ];
+
+        fibLevels.forEach(fib => {
+          const price = low + diff * (1 - fib.level);
+          candlestickSeriesRef.current.createPriceLine({
+            price,
+            color: fib.color,
+            lineWidth: 1,
+            lineStyle: 2,
+            axisLabelVisible: true,
+            title: fib.label,
+          });
+        });
+      }
+    });
+  }, [drawings]);
 
   return (
     <div className="relative">
@@ -189,6 +266,40 @@ export default function InteractiveChart({
         >
           Volume
         </button>
+        <button
+          onClick={() => setDrawingMode(drawingMode === 'trendline' ? 'none' : 'trendline')}
+          className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
+            drawingMode === 'trendline'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+          title="Draw Trendline"
+        >
+          <Pencil className="w-4 h-4" />
+          Trendline
+        </button>
+        <button
+          onClick={() => setDrawingMode(drawingMode === 'fibonacci' ? 'none' : 'fibonacci')}
+          className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
+            drawingMode === 'fibonacci'
+              ? 'bg-purple-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+          title="Draw Fibonacci Retracement"
+        >
+          <TrendingUp className="w-4 h-4" />
+          Fibonacci
+        </button>
+        {drawings.length > 0 && (
+          <button
+            onClick={() => setDrawings([])}
+            className="px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 bg-red-600 text-white hover:bg-red-700"
+            title="Clear All Drawings"
+          >
+            <Trash2 className="w-4 h-4" />
+            Clear
+          </button>
+        )}
       </div>
       <div ref={chartContainerRef} className="w-full" />
     </div>
