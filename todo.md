@@ -187,3 +187,35 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 - [x] Add 3-tab analysis panel (Overview, Gann, Ney)
 - [x] Integrate real Gann+Ney data display
 - [ ] Save checkpoint: "Webull-style UI redesign complete"
+
+
+---
+
+## Phase 10: Persistent Analysis System (Current Focus)
+- [ ] Review existing Gann+Ney analysis engine (34 passing tests)
+- [ ] Verify Yahoo Finance data integration still working
+- [ ] Test analysis with recovered examples (AEM, LTC, MP, PAAS, AG, AMAT)
+- [ ] Ensure analysis results persist in database
+- [ ] Add analysis history view
+- [ ] Save checkpoint: "Persistent analysis system verified"
+
+
+## Phase 11: Standardized PDF Output Formats
+- [ ] Create long-form report generator (markdown → PDF)
+- [ ] Create short-form summary generator (2-minute version)
+- [ ] Create Square of Nine chart generator (PNG → PDF)
+- [ ] Create slideshow generator (HTML slides → PDF)
+- [ ] Add export buttons to analysis results page
+- [ ] Test PDF generation with multiple tickers
+- [ ] Save checkpoint: "PDF export formats complete"
+
+
+## Phase 12: Rebrand - Remove Gann/Ney References
+- [x] Update homepage: remove "Find Your Entry Point" tagline
+- [x] Remove popular symbols section
+- [x] Remove all Gann/Ney methodology references from UI
+- [x] Rebrand as "Triggerstix" with focus on results, not methodology
+- [x] Simplify language: "geometric analysis" → "price sustainability", "specialist behavior" → "institutional activity"
+- [ ] Update analysis results page to remove methodology names
+- [ ] Test updated branding across all pages
+- [ ] Save checkpoint: "Rebranded without methodology disclosure"

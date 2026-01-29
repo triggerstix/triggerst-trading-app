@@ -9,6 +9,7 @@ import { analyzeCombined } from "./analysis/combined";
 import { analyzeGann } from "./analysis/gann";
 import { analyzeNey } from "./analysis/ney";
 import * as stockData from "./services/stockData";
+import { exportRouter } from "./routers/export";
 
 export const appRouter = router({
   system: systemRouter,
@@ -65,6 +66,8 @@ export const appRouter = router({
         return astroData.getPlanetaryAspects(positions);
       }),
   }),
+
+  export: exportRouter,
 
   analysis: router({
     // Analyze stock with real Yahoo Finance data

@@ -12,14 +12,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [symbol, setSymbol] = useState("");
 
-  const popularSymbols = [
-    { symbol: "AAPL", name: "Apple" },
-    { symbol: "NVDA", name: "NVIDIA" },
-    { symbol: "TSLA", name: "Tesla" },
-    { symbol: "MSFT", name: "Microsoft" },
-    { symbol: "BTC-USD", name: "Bitcoin" },
-    { symbol: "ETH-USD", name: "Ethereum" },
-  ];
+
 
   const handleAnalyze = (sym: string) => {
     if (sym) {
@@ -74,10 +67,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            Find Your Entry Point
+            Professional Trading Analysis
           </h1>
           <p className="text-xl text-slate-300 mb-8">
-            Professional trading analysis combining W.D. Gann's geometric methods with Richard Ney's specialist behavior patterns
+            Advanced market analysis combining price sustainability metrics with institutional activity tracking
           </p>
 
           {/* Search */}
@@ -103,22 +96,7 @@ export default function Home() {
             </div>
           </form>
 
-          {/* Popular Symbols */}
-          <div className="mb-16">
-            <p className="text-sm text-slate-400 mb-4">Popular symbols:</p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              {popularSymbols.map((item) => (
-                <button
-                  key={item.symbol}
-                  onClick={() => handleAnalyze(item.symbol)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
-                >
-                  <span className="font-semibold text-blue-400">{item.symbol}</span>
-                  <span className="text-slate-400 text-sm ml-2">{item.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+
         </div>
 
         {/* Features Grid */}
@@ -132,7 +110,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Interactive Charts</h3>
             <p className="text-slate-400">
-              Professional candlestick charts with drawing tools, Gann angles, and technical indicators
+              Professional candlestick charts with drawing tools and technical indicators
             </p>
           </div>
 
@@ -143,9 +121,9 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Gann + Ney Analysis</h3>
+            <h3 className="text-xl font-semibold mb-2">Dual-Method Analysis</h3>
             <p className="text-slate-400">
-              Combined geometric analysis and specialist behavior patterns for high-probability setups
+              Proprietary analysis combining price sustainability with institutional activity patterns
             </p>
           </div>
 
@@ -168,21 +146,21 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-3 text-blue-400">W.D. Gann Analysis</h3>
+              <h3 className="text-xl font-semibold mb-3 text-blue-400">Price Sustainability</h3>
               <ul className="space-y-2 text-slate-300">
-                <li>• Geometric angles (1x1, 2x1, 4x1, 8x1)</li>
-                <li>• Square of Nine support/resistance</li>
-                <li>• Time and price relationships</li>
-                <li>• Sustainable price calculations</li>
+                <li>• Geometric price relationships</li>
+                <li>• Key support/resistance levels</li>
+                <li>• Time and price cycle analysis</li>
+                <li>• Sustainable price targets</li>
               </ul>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-3 text-cyan-400">Richard Ney Analysis</h3>
+              <h3 className="text-xl font-semibold mb-3 text-cyan-400">Institutional Activity</h3>
               <ul className="space-y-2 text-slate-300">
-                <li>• Market phase detection (4 phases)</li>
-                <li>• Specialist behavior patterns</li>
-                <li>• Volume analysis</li>
-                <li>• Institutional buying/selling signals</li>
+                <li>• Market phase identification</li>
+                <li>• Smart money behavior tracking</li>
+                <li>• Volume pattern analysis</li>
+                <li>• Accumulation/distribution signals</li>
               </ul>
             </div>
           </div>
@@ -193,8 +171,8 @@ export default function Home() {
       <footer className="border-t border-slate-800 bg-[#0d1129] mt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-slate-400 text-sm">
-            <p>Triggerstix - Where Geometry Meets Volume</p>
-            <p className="mt-2">Professional trading analysis for serious traders</p>
+            <p>Triggerstix - Professional Trading Analysis</p>
+            <p className="mt-2">Advanced market intelligence for serious traders</p>
           </div>
         </div>
       </footer>
