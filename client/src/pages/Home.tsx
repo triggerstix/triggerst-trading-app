@@ -29,37 +29,12 @@ export default function Home() {
     <div className="min-h-screen bg-[#0a0e27] text-white">
       {/* Header */}
       <header className="border-b border-slate-800 bg-[#0d1129]">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
-              Triggerstix
-            </div>
-            <div className="text-sm text-slate-400 hidden md:block">
-              Your Trading Signal
+              Triggerstix Trading Analysis
             </div>
           </div>
-          
-          {/* Search Bar */}
-          <form onSubmit={handleSubmit} className="flex-1 max-w-md mx-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search symbol (e.g., AAPL, BTC-USD)"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                className="pl-10 bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
-              />
-            </div>
-          </form>
-
-          <Button 
-            onClick={() => handleAnalyze(symbol)}
-            disabled={!symbol}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Analyze
-          </Button>
         </div>
       </header>
 
@@ -171,7 +146,7 @@ export default function Home() {
       <footer className="border-t border-slate-800 bg-[#0d1129] mt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-slate-400 text-sm">
-            <p>Triggerstix - Professional Trading Analysis</p>
+            <p>Triggerstix Trading Analysis</p>
             <p className="mt-2">Advanced market intelligence for serious traders</p>
           </div>
         </div>
