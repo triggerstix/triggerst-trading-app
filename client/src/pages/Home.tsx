@@ -125,30 +125,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* How It Works */}
-        <div className="mt-20 max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-3 text-blue-400">Price Sustainability</h3>
-              <ul className="space-y-2 text-slate-300">
-                <li>• Geometric price relationships</li>
-                <li>• Key support/resistance levels</li>
-                <li>• Time and price cycle analysis</li>
-                <li>• Sustainable price targets</li>
-              </ul>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-3 text-cyan-400">Institutional Activity</h3>
-              <ul className="space-y-2 text-slate-300">
-                <li>• Market phase identification</li>
-                <li>• Smart money behavior tracking</li>
-                <li>• Volume pattern analysis</li>
-                <li>• Accumulation/distribution signals</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* Footer */}

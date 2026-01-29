@@ -70,6 +70,45 @@ export default function ChartView() {
     }
   };
 
+  // Export handlers
+  const handleExport = async (format: 'longForm' | 'shortForm' | 'slideshow') => {
+    if (!symbol) return;
+    
+    try {
+      toast.info(`Generating ${format === 'longForm' ? 'long-form report' : format === 'shortForm' ? 'short summary' : 'slideshow'}...`);
+      
+      // Fetch export data
+      const fetchExport = async () => {
+        if (format === 'longForm') {
+          return await utils.client.export.longForm.query({ symbol });
+        } else if (format === 'shortForm') {
+          return await utils.client.export.shortForm.query({ symbol });
+        } else {
+          return await utils.client.export.slideshow.query({ symbol });
+        }
+      };
+      
+      const result = await fetchExport();
+      
+      // Create download
+      const blob = new Blob([result.content], { 
+        type: result.format === 'html' ? 'text/html' : 'text/plain' 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Export complete!');
+    } catch (error) {
+      toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   // Risk color mapping
   const getRiskColor = (level: string) => {
     switch (level) {
@@ -311,7 +350,7 @@ export default function ChartView() {
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left"
-                    onClick={() => alert('Long-form report export coming soon')}
+                    onClick={() => handleExport('longForm')}
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -321,7 +360,7 @@ export default function ChartView() {
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left"
-                    onClick={() => alert('Short summary export coming soon')}
+                    onClick={() => handleExport('shortForm')}
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -331,7 +370,7 @@ export default function ChartView() {
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left"
-                    onClick={() => alert('Slideshow export coming soon')}
+                    onClick={() => handleExport('slideshow')}
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
