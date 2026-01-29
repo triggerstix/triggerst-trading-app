@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /**
  * Triggerstix Chart View - Webull-style Trading Interface
- * Full-screen chart with Gann+Ney analysis sidebar
+ * Full-screen chart with dual-method analysis sidebar
  */
 export default function ChartView() {
   const { symbol } = useParams<{ symbol: string }>();
@@ -157,7 +157,7 @@ export default function ChartView() {
               <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg">Interactive Chart Coming Soon</p>
               <p className="text-sm mt-2">
-                TradingView Lightweight Charts with Gann angles and drawing tools
+                TradingView Lightweight Charts with geometric angles and drawing tools
               </p>
             </div>
           </div>
@@ -168,8 +168,8 @@ export default function ChartView() {
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="w-full grid grid-cols-3 bg-slate-900 border-b border-slate-800 rounded-none">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="gann">Gann</TabsTrigger>
-              <TabsTrigger value="ney">Ney</TabsTrigger>
+              <TabsTrigger value="gann">Price Analysis</TabsTrigger>
+              <TabsTrigger value="ney">Market Phase</TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -238,13 +238,51 @@ export default function ChartView() {
                   </p>
                 </div>
               </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-slate-400 mb-2">
+                  EXPORT REPORTS
+                </h3>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left"
+                    onClick={() => alert('Long-form report export coming soon')}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Long-Form Report (PDF)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left"
+                    onClick={() => alert('Short summary export coming soon')}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Short Summary (PDF)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left"
+                    onClick={() => alert('Slideshow export coming soon')}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                    </svg>
+                    Slideshow (PDF)
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
 
-            {/* Gann Tab */}
+            {/* Price Analysis Tab */}
             <TabsContent value="gann" className="p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
-                  GANN ANGLES
+                  PRICE ANGLES
                 </h3>
                 <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-3">
@@ -270,7 +308,7 @@ export default function ChartView() {
 
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
-                  SQUARE OF NINE
+                  KEY LEVELS
                 </h3>
                 <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-2">
                   {gann.squareOfNineLevels
@@ -310,7 +348,7 @@ export default function ChartView() {
               </div>
             </TabsContent>
 
-            {/* Ney Tab */}
+            {/* Market Phase Tab */}
             <TabsContent value="ney" className="p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">

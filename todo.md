@@ -240,3 +240,21 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 - [x] Remove header section entirely from homepage
 - [x] Keep only hero section with search
 - [ ] Save checkpoint: "Header removed"
+
+
+## Phase 16: Rebrand Analysis Results Page
+- [x] Find analysis results page component
+- [x] Replace "Gann" tab with "Price Analysis"
+- [x] Replace "Ney" tab with "Market Phase"
+- [x] Update section headers (GANN ANGLES → PRICE ANGLES, SQUARE OF NINE → KEY LEVELS)
+- [x] Update comments and descriptions
+- [x] Test analysis page with sample ticker
+- [ ] Save checkpoint: "Analysis page rebranded"
+
+## Phase 17: Add PDF Export Functionality
+- [x] Add export buttons to ChartView analysis panel
+- [ ] Implement long-form report export (placeholder alerts added)
+- [ ] Implement short summary export (placeholder alerts added)
+- [ ] Implement slideshow export (placeholder alerts added)
+- [ ] Test export buttons display
+- [ ] Save checkpoint: "PDF export buttons added"
