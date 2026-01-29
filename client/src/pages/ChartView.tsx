@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -21,6 +23,52 @@ export default function ChartView() {
 
   const { data: response, isLoading, error } = analysisQuery;
   const analysis = response;
+
+  // Auth and watchlist
+  const { user } = useAuth();
+  const utils = trpc.useUtils();
+  
+  const isInWatchlistQuery = trpc.watchlist.isInWatchlist.useQuery(
+    { symbol: symbol || "" },
+    { enabled: !!symbol && !!user }
+  );
+  
+  const addToWatchlistMutation = trpc.watchlist.addToWatchlist.useMutation({
+    onSuccess: () => {
+      toast.success(`${symbol} added to watchlist`);
+      utils.watchlist.isInWatchlist.invalidate();
+      utils.watchlist.getWatchlist.invalidate();
+    },
+    onError: (error) => {
+      toast.error(`Failed to add to watchlist: ${error.message}`);
+    },
+  });
+  
+  const removeFromWatchlistMutation = trpc.watchlist.removeFromWatchlist.useMutation({
+    onSuccess: () => {
+      toast.success(`${symbol} removed from watchlist`);
+      utils.watchlist.isInWatchlist.invalidate();
+      utils.watchlist.getWatchlist.invalidate();
+    },
+    onError: (error) => {
+      toast.error(`Failed to remove from watchlist: ${error.message}`);
+    },
+  });
+  
+  const handleWatchlistToggle = () => {
+    if (!user) {
+      toast.error("Please sign in to use watchlist");
+      return;
+    }
+    
+    if (!symbol) return;
+    
+    if (isInWatchlistQuery.data) {
+      removeFromWatchlistMutation.mutate({ symbol });
+    } else {
+      addToWatchlistMutation.mutate({ symbol });
+    }
+  };
 
   // Risk color mapping
   const getRiskColor = (level: string) => {
@@ -134,15 +182,31 @@ export default function ChartView() {
             </div>
           </div>
 
-          {/* Recommendation */}
-          <div className="text-right">
-            <div className="text-sm text-slate-400 mb-1">Recommendation</div>
-            <div
-              className={`px-6 py-2 rounded-lg text-xl font-bold ${getRecommendationColor(
-                recommendation.action
-              )}`}
+          <div className="flex items-center gap-4">
+            {/* Watchlist Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWatchlistToggle}
+              disabled={!user || addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending}
+              className="flex items-center gap-2"
             >
-              {recommendation.action}
+              <Star 
+                className={`w-4 h-4 ${isInWatchlistQuery.data ? 'fill-yellow-400 text-yellow-400' : ''}`}
+              />
+              {isInWatchlistQuery.data ? 'Remove' : 'Watchlist'}
+            </Button>
+
+            {/* Recommendation */}
+            <div className="text-right">
+              <div className="text-sm text-slate-400 mb-1">Recommendation</div>
+              <div
+                className={`px-6 py-2 rounded-lg text-xl font-bold ${getRecommendationColor(
+                  recommendation.action
+                )}`}
+              >
+                {recommendation.action}
+              </div>
             </div>
           </div>
         </div>

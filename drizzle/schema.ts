@@ -18,4 +18,15 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Watchlist table for tracking user's saved tickers
+ */
+export const watchlist = mysqlTable("watchlist", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  addedAt: timestamp("addedAt").defaultNow().notNull(),
+});
+
+export type Watchlist = typeof watchlist.$inferSelect;
+export type InsertWatchlist = typeof watchlist.$inferInsert;

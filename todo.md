@@ -258,3 +258,16 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 - [ ] Implement slideshow export (placeholder alerts added)
 - [ ] Test export buttons display
 - [ ] Save checkpoint: "PDF export buttons added"
+
+
+## Phase 18: Watchlist Feature
+- [x] Create watchlist database schema (user_id, symbol, added_at)
+- [x] Push database schema changes
+- [x] Add watchlist query helpers in server/db.ts
+- [x] Create watchlist tRPC procedures (add, remove, list, isInWatchlist)
+- [x] Add "Add to Watchlist" button to ChartView header
+- [x] Create Watchlist page component
+- [x] Add Watchlist route to App.tsx
+- [x] Add watchlist link to Home page header
+- [x] Test watchlist functionality (all 34 tests passing)
+- [ ] Save checkpoint: "Watchlist feature complete"

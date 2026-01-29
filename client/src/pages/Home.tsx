@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 /**
  * Triggerstix - Webull-style Trading Interface
@@ -25,8 +26,27 @@ export default function Home() {
     handleAnalyze(symbol);
   };
 
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
+      {/* Header */}
+      {user && (
+        <div className="border-b border-slate-800 bg-[#0d1129]">
+          <div className="container mx-auto px-4 py-3 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/watchlist")}
+              className="text-slate-400 hover:text-white flex items-center gap-2"
+            >
+              <Star className="w-4 h-4" />
+              My Watchlist
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">

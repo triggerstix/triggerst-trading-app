@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, watchlist, InsertWatchlist } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -85,4 +85,69 @@ export async function getUser(id: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+/**
+ * Watchlist helpers
+ */
+export async function addToWatchlist(userId: string, symbol: string): Promise<{ id: string }> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const id = `${userId}-${symbol}-${Date.now()}`;
+  const watchlistItem: InsertWatchlist = {
+    id,
+    userId,
+    symbol: symbol.toUpperCase(),
+  };
+
+  await db.insert(watchlist).values(watchlistItem);
+  return { id };
+}
+
+export async function removeFromWatchlist(userId: string, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.delete(watchlist).where(
+    and(
+      eq(watchlist.userId, userId),
+      eq(watchlist.symbol, symbol.toUpperCase())
+    )
+  );
+}
+
+export async function getUserWatchlist(userId: string) {
+  const db = await getDb();
+  if (!db) {
+    return [];
+  }
+
+  return db
+    .select()
+    .from(watchlist)
+    .where(eq(watchlist.userId, userId))
+    .orderBy(desc(watchlist.addedAt));
+}
+
+export async function isInWatchlist(userId: string, symbol: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    return false;
+  }
+
+  const result = await db
+    .select()
+    .from(watchlist)
+    .where(
+      and(
+        eq(watchlist.userId, userId),
+        eq(watchlist.symbol, symbol.toUpperCase())
+      )
+    )
+    .limit(1);
+
+  return result.length > 0;
+}

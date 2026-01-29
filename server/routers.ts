@@ -10,6 +10,8 @@ import { analyzeGann } from "./analysis/gann";
 import { analyzeNey } from "./analysis/ney";
 import * as stockData from "./services/stockData";
 import { exportRouter } from "./routers/export";
+import * as db from "./db";
+import { protectedProcedure } from "./_core/trpc";
 
 export const appRouter = router({
   system: systemRouter,
@@ -68,6 +70,32 @@ export const appRouter = router({
   }),
 
   export: exportRouter,
+
+  watchlist: router({
+    addToWatchlist: protectedProcedure
+      .input(z.object({ symbol: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.addToWatchlist(ctx.user.id, input.symbol);
+      }),
+
+    removeFromWatchlist: protectedProcedure
+      .input(z.object({ symbol: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.removeFromWatchlist(ctx.user.id, input.symbol);
+        return { success: true };
+      }),
+
+    getWatchlist: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getUserWatchlist(ctx.user.id);
+      }),
+
+    isInWatchlist: protectedProcedure
+      .input(z.object({ symbol: z.string() }))
+      .query(async ({ ctx, input }) => {
+        return db.isInWatchlist(ctx.user.id, input.symbol);
+      }),
+  }),
 
   analysis: router({
     // Analyze stock with real Yahoo Finance data
