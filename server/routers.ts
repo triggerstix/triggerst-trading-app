@@ -148,6 +148,14 @@ export const appRouter = router({
             startDate: start.date.toISOString(),
             tradingDays,
           },
+          chartData: historical.map(h => ({
+            time: h.date.toISOString().split('T')[0],
+            open: h.open,
+            high: h.high,
+            low: h.low,
+            close: h.close,
+            volume: h.volume,
+          })),
         };
       }),
 

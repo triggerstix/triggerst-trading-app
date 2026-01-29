@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star } from "lucide-react";
+import InteractiveChart from "@/components/InteractiveChart";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,14 +16,32 @@ export default function ChartView() {
   const { symbol } = useParams<{ symbol: string }>();
   const [, setLocation] = useLocation();
 
-  // Fetch analysis data
+  // Fetch analysis data with real-time updates
   const analysisQuery = trpc.analysis.analyzeStock.useQuery(
     { symbol: symbol || "" },
-    { enabled: !!symbol, refetchOnWindowFocus: false }
+    { 
+      enabled: !!symbol, 
+      refetchOnWindowFocus: false,
+      refetchInterval: 30000, // Refetch every 30 seconds
+    }
   );
 
   const { data: response, isLoading, error } = analysisQuery;
   const analysis = response;
+
+  // Show toast notification when signals change
+  const [prevRecommendation, setPrevRecommendation] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (analysis?.recommendation?.action) {
+      if (prevRecommendation && prevRecommendation !== analysis.recommendation.action) {
+        toast.info(`Signal changed: ${analysis.recommendation.action}`, {
+          description: `${symbol} recommendation updated`,
+        });
+      }
+      setPrevRecommendation(analysis.recommendation.action);
+    }
+  }, [analysis?.recommendation?.action, prevRecommendation, symbol]);
 
   // Auth and watchlist
   const { user } = useAuth();
@@ -255,14 +274,28 @@ export default function ChartView() {
       <div className="flex h-[calc(100vh-120px)]">
         {/* Chart Area (Left) */}
         <div className="flex-1 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl h-full flex items-center justify-center">
-            <div className="text-center text-slate-400">
-              <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">Interactive Chart Coming Soon</p>
-              <p className="text-sm mt-2">
-                TradingView Lightweight Charts with geometric angles and drawing tools
-              </p>
-            </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl h-full overflow-hidden">
+            {analysis?.chartData && (
+              <InteractiveChart
+                data={analysis.chartData}
+                symbol={symbol || ''}
+                currentPrice={currentPrice}
+                supportLevels={[
+                  gann.rallyAngle.sustainablePrice * 0.75,
+                  gann.rallyAngle.sustainablePrice * 0.5,
+                ]}
+                resistanceLevels={[
+                  gann.rallyAngle.sustainablePrice * 1.25,
+                  gann.rallyAngle.sustainablePrice * 1.5,
+                ]}
+              />
+            )}
+            {!analysis?.chartData && (
+              <div className="h-full flex items-center justify-center text-slate-400">
+                <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>Loading chart data...</p>
+              </div>
+            )}
           </div>
         </div>
 

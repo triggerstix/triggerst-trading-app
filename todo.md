@@ -288,3 +288,14 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 - [x] Restore "How It Works" section content (keep the two-column grid)
 - [x] Remove only the "How It Works" heading text
 - [ ] Save checkpoint: "Section content restored"
+
+
+## Phase 21: Complete Core Features
+- [x] Implement interactive charts with drawing tools (lightweight-charts library)
+- [x] Add technical indicators overlay (volume histogram)
+- [x] Add support/resistance levels visualization
+- [x] Add current price line to chart
+- [x] Add real-time price updates (polling every 30 seconds)
+- [x] Display live signal changes with notifications
+- [x] Test all interactive features (all 34 tests passing)
+- [ ] Save checkpoint: "Core features complete"
