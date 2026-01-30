@@ -90,6 +90,23 @@ export default function ChartView() {
     }
   };
 
+  // Memoize support/resistance levels to prevent chart recreation
+  const supportLevels = useMemo(() => {
+    if (!analysis?.gann?.rallyAngle?.sustainablePrice) return [];
+    return [
+      analysis.gann.rallyAngle.sustainablePrice * 0.75,
+      analysis.gann.rallyAngle.sustainablePrice * 0.5,
+    ];
+  }, [analysis?.gann?.rallyAngle?.sustainablePrice]);
+
+  const resistanceLevels = useMemo(() => {
+    if (!analysis?.gann?.rallyAngle?.sustainablePrice) return [];
+    return [
+      analysis.gann.rallyAngle.sustainablePrice * 1.25,
+      analysis.gann.rallyAngle.sustainablePrice * 1.5,
+    ];
+  }, [analysis?.gann?.rallyAngle?.sustainablePrice]);
+
   // Export handlers
   const handleExport = async (format: 'longForm' | 'shortForm' | 'slideshow') => {
     if (!symbol) return;
@@ -312,14 +329,8 @@ export default function ChartView() {
                 data={analysis.chartData}
                 symbol={symbol || ''}
                 currentPrice={currentPrice}
-                supportLevels={[
-                  gann.rallyAngle.sustainablePrice * 0.75,
-                  gann.rallyAngle.sustainablePrice * 0.5,
-                ]}
-                resistanceLevels={[
-                  gann.rallyAngle.sustainablePrice * 1.25,
-                  gann.rallyAngle.sustainablePrice * 1.5,
-                ]}
+                supportLevels={supportLevels}
+                resistanceLevels={resistanceLevels}
               />
             )}
             {!analysis?.chartData && (

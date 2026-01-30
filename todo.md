@@ -370,3 +370,11 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Identify and fix the infinite loop at line 81 (removed drawingMode and drawingStart from dependencies)
 - [x] Test chart rendering with real ticker (no errors, app stable)
 - [ ] Save checkpoint: "Fixed InteractiveChart infinite loop"
+
+
+## Phase 30: Deep Fix InteractiveChart Dependencies
+- [x] Check if data, supportLevels, resistanceLevels are stable references
+- [x] Use useMemo to stabilize array/object dependencies (supportLevels, resistanceLevels)
+- [x] Verify chart only recreates when necessary (no errors, HMR working)
+- [x] Test with real ticker analysis (app stable)
+- [ ] Save checkpoint: "Stabilized chart dependencies"
