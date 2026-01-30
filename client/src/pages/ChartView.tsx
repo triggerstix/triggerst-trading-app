@@ -15,10 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function ChartView() {
   const { symbol } = useParams<{ symbol: string }>();
   const [, setLocation] = useLocation();
+  
+  // Timeframe state
+  const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y'>('1M');
 
   // Fetch analysis data with real-time updates
   const analysisQuery = trpc.analysis.analyzeStock.useQuery(
-    { symbol: symbol || "" },
+    { symbol: symbol || "", timeframe },
     { 
       enabled: !!symbol, 
       refetchOnWindowFocus: false,
@@ -114,49 +117,85 @@ export default function ChartView() {
   const handleExport = async (format: 'longForm' | 'shortForm' | 'slideshow') => {
     if (!symbol) return;
     
+    const toastId = toast.loading(`Generating ${format === 'longForm' ? 'long-form report' : format === 'shortForm' ? 'short summary' : 'slideshow'}...`);
+    
     try {
-      toast.info(`Generating ${format === 'longForm' ? 'long-form report' : format === 'shortForm' ? 'short summary' : 'slideshow'}...`);
+      const endpoint = format === 'longForm' ? 'export.longForm' 
+        : format === 'shortForm' ? 'export.shortForm' 
+        : 'export.slideshow';
       
-      // Fetch export data using tRPC client
-      const fetchExport = async () => {
-        if (format === 'longForm') {
-          return await utils.client.export.longForm.query({ symbol: symbol || "" });
-        } else if (format === 'shortForm') {
-          return await utils.client.export.shortForm.query({ symbol: symbol || "" });
-        } else {
-          return await utils.client.export.slideshow.query({ symbol: symbol || "" });
-        }
-      };
+      const input = JSON.stringify({ "0": { json: { symbol: symbol || "" } } });
+      const url = `/api/trpc/${endpoint}?batch=1&input=${encodeURIComponent(input)}`;
       
-      const result = await fetchExport() as { format: 'pdf' | 'html' | 'text'; content: string; filename: string };
+      console.log('[Export] Fetching:', url);
+      
+      const response = await fetch(url, {
+        credentials: 'include',
+      });
+      
+      console.log('[Export] Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Export] Error response:', errorText);
+        throw new Error(`Export request failed: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[Export] Raw response received, array length:', Array.isArray(data) ? data.length : 'not array');
+      
+      // Extract result from batch response format
+      if (!Array.isArray(data) || !data[0]?.result?.data?.json) {
+        console.error('[Export] Unexpected response format:', data);
+        throw new Error('Unexpected response format');
+      }
+      
+      const result = data[0].result.data.json as { format: 'pdf' | 'html' | 'text'; content: string; filename: string };
+      
+      console.log('[Export] Result:', { format: result.format, contentLength: result.content?.length, filename: result.filename });
+      
+      if (!result.content || result.content.length === 0) {
+        throw new Error('Empty content received from server');
+      }
       
       // Create download
       let blob: Blob;
       if (result.format === 'pdf') {
         // Decode base64 PDF
+        console.log('[Export] Decoding base64 PDF...');
         const binaryString = atob(result.content);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
         blob = new Blob([bytes], { type: 'application/pdf' });
+        console.log('[Export] PDF blob size:', blob.size);
       } else if (result.format === 'html') {
         blob = new Blob([result.content], { type: 'text/html' });
       } else {
         blob = new Blob([result.content], { type: 'text/plain' });
       }
       
-      const url = URL.createObjectURL(blob);
+      // Trigger download
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = blobUrl;
       a.download = result.filename;
+      a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
       
+      // Cleanup after a delay to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      }, 100);
+      
+      toast.dismiss(toastId);
       toast.success('Export complete!');
     } catch (error) {
+      toast.dismiss(toastId);
+      console.error('[Export] Error:', error);
       toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
@@ -357,6 +396,8 @@ export default function ChartView() {
                 currentPrice={currentPrice}
                 supportLevels={supportLevels}
                 resistanceLevels={resistanceLevels}
+                timeframe={timeframe}
+                onTimeframeChange={setTimeframe}
               />
             )}
             {!analysis?.chartData && (

@@ -126,10 +126,24 @@ export const appRouter = router({
     analyzeStock: publicProcedure
       .input(z.object({
         symbol: z.string(),
+        timeframe: z.enum(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y']).optional().default('1M'),
       }))
       .query(async ({ input }) => {
-        // Fetch historical data (1 year)
-        const chartData = await stockData.getHistoricalData(input.symbol, "1y", "1d");
+        // Map timeframe to Yahoo Finance range and interval
+        const timeframeConfig: Record<string, { range: string; interval: string }> = {
+          '1D': { range: '1d', interval: '5m' },
+          '1W': { range: '5d', interval: '15m' },
+          '1M': { range: '1mo', interval: '1h' },
+          '3M': { range: '3mo', interval: '1d' },
+          '6M': { range: '6mo', interval: '1d' },
+          '1Y': { range: '1y', interval: '1d' },
+          '5Y': { range: '5y', interval: '1wk' },
+        };
+        
+        const { range, interval } = timeframeConfig[input.timeframe] || timeframeConfig['1M'];
+        
+        // Fetch historical data based on timeframe
+        const chartData = await stockData.getHistoricalData(input.symbol, range, interval);
         
         if (!chartData || chartData.historical.length === 0) {
           throw new Error(`Unable to fetch data for symbol: ${input.symbol}`);
@@ -172,14 +186,38 @@ export const appRouter = router({
             startDate: start.date.toISOString(),
             tradingDays,
           },
-          chartData: historical.map(h => ({
-            time: h.date.toISOString().split('T')[0],
-            open: h.open,
-            high: h.high,
-            low: h.low,
-            close: h.close,
-            volume: h.volume,
-          })),
+          // For intraday data (1D, 1W, 1M), use Unix timestamps
+          // For daily+ data, use yyyy-mm-dd format
+          chartData: (() => {
+            const isIntraday = ['1D', '1W', '1M'].includes(input.timeframe);
+            const seen = new Set<string | number>();
+            return historical
+              .map(h => {
+                // Use Unix timestamp for intraday, date string for daily+
+                const time = isIntraday 
+                  ? Math.floor(h.date.getTime() / 1000) // Unix timestamp in seconds
+                  : h.date.toISOString().split('T')[0]; // yyyy-mm-dd
+                return {
+                  time,
+                  open: h.open,
+                  high: h.high,
+                  low: h.low,
+                  close: h.close,
+                  volume: h.volume,
+                };
+              })
+              .filter(item => {
+                if (seen.has(item.time)) return false;
+                seen.add(item.time);
+                return true;
+              })
+              .sort((a, b) => {
+                if (typeof a.time === 'number' && typeof b.time === 'number') {
+                  return a.time - b.time;
+                }
+                return String(a.time).localeCompare(String(b.time));
+              });
+          })(),
         };
       }),
 

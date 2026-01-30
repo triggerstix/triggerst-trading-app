@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
 import { Pencil, TrendingUp, Trash2, Minus } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 
 interface ChartData {
-  time: string;
+  time: string | number; // string for daily (yyyy-mm-dd), number for intraday (Unix timestamp)
   open: number;
   high: number;
   low: number;
@@ -13,12 +13,16 @@ interface ChartData {
   volume: number;
 }
 
+type Timeframe = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y';
+
 interface InteractiveChartProps {
   data: ChartData[];
   symbol: string;
   currentPrice: number;
   supportLevels?: number[];
   resistanceLevels?: number[];
+  timeframe?: Timeframe;
+  onTimeframeChange?: (tf: Timeframe) => void;
 }
 
 export default function InteractiveChart({ 
@@ -26,7 +30,9 @@ export default function InteractiveChart({
   symbol, 
   currentPrice,
   supportLevels = [],
-  resistanceLevels = []
+  resistanceLevels = [],
+  timeframe: externalTimeframe,
+  onTimeframeChange,
 }: InteractiveChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -35,7 +41,23 @@ export default function InteractiveChart({
   const drawingSeriesRef = useRef<any[]>([]);
   const priceLineRefs = useRef<any[]>([]);
   const [showVolume, setShowVolume] = useState(true);
-  const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y'>('1M');
+  const [showSMA20, setShowSMA20] = useState(false);
+  const [showSMA50, setShowSMA50] = useState(false);
+  const [showSMA200, setShowSMA200] = useState(false);
+  const sma20SeriesRef = useRef<any>(null);
+  const sma50SeriesRef = useRef<any>(null);
+  const sma200SeriesRef = useRef<any>(null);
+  
+  // Use external timeframe if provided, otherwise use internal state
+  const [internalTimeframe, setInternalTimeframe] = useState<Timeframe>('1M');
+  const timeframe = externalTimeframe ?? internalTimeframe;
+  const setTimeframe = (tf: Timeframe) => {
+    if (onTimeframeChange) {
+      onTimeframeChange(tf);
+    } else {
+      setInternalTimeframe(tf);
+    }
+  };
   const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
   const [drawings, setDrawings] = useState<any[]>([]);
   const [drawingStart, setDrawingStart] = useState<{ time: number; price: number } | null>(null);
@@ -158,6 +180,58 @@ export default function InteractiveChart({
 
     volumeSeries.setData(volumeData);
 
+    // Calculate Simple Moving Averages
+    const calculateSMA = (period: number) => {
+      const smaData: { time: Time; value: number }[] = [];
+      for (let i = period - 1; i < data.length; i++) {
+        let sum = 0;
+        for (let j = 0; j < period; j++) {
+          sum += data[i - j].close;
+        }
+        smaData.push({
+          time: data[i].time as Time,
+          value: sum / period,
+        });
+      }
+      return smaData;
+    };
+
+    // Add SMA 20 series (yellow)
+    const sma20Series = chart.addSeries(LineSeries, {
+      color: '#fbbf24',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    sma20SeriesRef.current = sma20Series;
+    if (data.length >= 20) {
+      sma20Series.setData(calculateSMA(20));
+    }
+
+    // Add SMA 50 series (orange)
+    const sma50Series = chart.addSeries(LineSeries, {
+      color: '#f97316',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    sma50SeriesRef.current = sma50Series;
+    if (data.length >= 50) {
+      sma50Series.setData(calculateSMA(50));
+    }
+
+    // Add SMA 200 series (purple)
+    const sma200Series = chart.addSeries(LineSeries, {
+      color: '#a855f7',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    sma200SeriesRef.current = sma200Series;
+    if (data.length >= 200) {
+      sma200Series.setData(calculateSMA(200));
+    }
+
     // Add support/resistance lines
     supportLevels.forEach(level => {
       candlestickSeries.createPriceLine({
@@ -258,6 +332,25 @@ export default function InteractiveChart({
       });
     }
   }, [showVolume]);
+
+  // Toggle SMA visibility
+  useEffect(() => {
+    if (sma20SeriesRef.current) {
+      sma20SeriesRef.current.applyOptions({ visible: showSMA20 });
+    }
+  }, [showSMA20]);
+
+  useEffect(() => {
+    if (sma50SeriesRef.current) {
+      sma50SeriesRef.current.applyOptions({ visible: showSMA50 });
+    }
+  }, [showSMA50]);
+
+  useEffect(() => {
+    if (sma200SeriesRef.current) {
+      sma200SeriesRef.current.applyOptions({ visible: showSMA200 });
+    }
+  }, [showSMA200]);
 
   // Render drawings
   useEffect(() => {
@@ -401,6 +494,40 @@ export default function InteractiveChart({
         >
           <Minus className="w-4 h-4" />
           H-Line
+        </button>
+        <div className="border-l border-slate-700 h-6 mx-1" />
+        <button
+          onClick={() => setShowSMA20(!showSMA20)}
+          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+            showSMA20
+              ? 'bg-yellow-500 text-black'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+          title="20-period Simple Moving Average"
+        >
+          SMA20
+        </button>
+        <button
+          onClick={() => setShowSMA50(!showSMA50)}
+          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+            showSMA50
+              ? 'bg-orange-500 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+          title="50-period Simple Moving Average"
+        >
+          SMA50
+        </button>
+        <button
+          onClick={() => setShowSMA200(!showSMA200)}
+          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+            showSMA200
+              ? 'bg-purple-500 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+          title="200-period Simple Moving Average"
+        >
+          SMA200
         </button>
         {drawings.length > 0 && (
           <button
