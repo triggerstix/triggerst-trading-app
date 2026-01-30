@@ -389,4 +389,12 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Fixed scaleMargins configuration for volume histogram
 - [x] Added null safety for price coordinates
 - [x] Chart renders perfectly with no infinite loops
-- [ ] Save checkpoint: "Fully stabilized chart with v5 API and memoized data"
+- [x] Save checkpoint: "Fully stabilized chart with v5 API and memoized data"
+
+
+## Phase 32: Fix Chart Timeline Interaction Error
+- [x] Investigate error that occurs when adjusting timeline on candlestick chart
+- [x] Check chart event handlers and subscriptions
+- [x] Fix the error in InteractiveChart.tsx (added cleanup for drawing series/price lines)
+- [x] Test chart zoom, pan, and timeline adjustments
+- [ ] Save checkpoint: "Chart timeline interaction error fixed"

@@ -32,6 +32,8 @@ export default function InteractiveChart({
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<any>(null);
   const volumeSeriesRef = useRef<any>(null);
+  const drawingSeriesRef = useRef<any[]>([]);
+  const priceLineRefs = useRef<any[]>([]);
   const [showVolume, setShowVolume] = useState(true);
   const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y'>('1M');
   const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
@@ -261,10 +263,29 @@ export default function InteractiveChart({
   useEffect(() => {
     if (!candlestickSeriesRef.current || !chartRef.current) return;
 
+    // Clean up previous drawings to prevent duplicates
+    drawingSeriesRef.current.forEach(series => {
+      try {
+        chartRef.current?.removeSeries(series);
+      } catch (e) {
+        // Series may already be removed
+      }
+    });
+    drawingSeriesRef.current = [];
+
+    priceLineRefs.current.forEach(priceLine => {
+      try {
+        candlestickSeriesRef.current?.removePriceLine(priceLine);
+      } catch (e) {
+        // Price line may already be removed
+      }
+    });
+    priceLineRefs.current = [];
+
     drawings.forEach(drawing => {
       if (drawing.type === 'horizontal') {
         // Draw horizontal line
-        candlestickSeriesRef.current.createPriceLine({
+        const priceLine = candlestickSeriesRef.current.createPriceLine({
           price: drawing.price,
           color: drawing.color || '#fbbf24',
           lineWidth: 2,
@@ -272,6 +293,7 @@ export default function InteractiveChart({
           axisLabelVisible: true,
           title: 'H-Line',
         });
+        priceLineRefs.current.push(priceLine);
       } else if (drawing.type === 'trendline') {
         // Draw trendline
         const series = (chartRef.current as any).addLineSeries({
@@ -284,6 +306,7 @@ export default function InteractiveChart({
           { time: drawing.start.time, value: drawing.start.price },
           { time: drawing.end.time, value: drawing.end.price },
         ]);
+        drawingSeriesRef.current.push(series);
       } else if (drawing.type === 'fibonacci') {
         // Draw Fibonacci retracement levels
         const high = Math.max(drawing.start.price, drawing.end.price);
@@ -301,7 +324,7 @@ export default function InteractiveChart({
 
         fibLevels.forEach(fib => {
           const price = low + diff * (1 - fib.level);
-          candlestickSeriesRef.current.createPriceLine({
+          const priceLine = candlestickSeriesRef.current.createPriceLine({
             price,
             color: fib.color,
             lineWidth: 1,
@@ -309,6 +332,7 @@ export default function InteractiveChart({
             axisLabelVisible: true,
             title: fib.label,
           });
+          priceLineRefs.current.push(priceLine);
         });
       }
     });
