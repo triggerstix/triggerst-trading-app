@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star, Maximize2 } from "lucide-react";
 import InteractiveChart from "@/components/InteractiveChart";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -303,6 +303,17 @@ export default function ChartView() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Full Screen Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation(`/chart-only/${symbol}`)}
+              className="flex items-center gap-2"
+            >
+              <Maximize2 className="w-4 h-4" />
+              Full Screen
+            </Button>
+
             {/* Watchlist Button */}
             <Button
               variant="outline"
