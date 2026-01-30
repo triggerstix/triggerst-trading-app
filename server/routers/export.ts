@@ -13,13 +13,52 @@ import {
   generateSlideshow,
   type StockInfo 
 } from "../services/pdfExport";
-import { exec } from "child_process";
-import { promisify } from "util";
-import { writeFile, readFile, unlink } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
+import { execSync } from "child_process";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
-const execAsync = promisify(exec);
+// Helper to convert markdown to PDF using manus-md-to-pdf
+async function markdownToPdf(markdown: string, filename: string): Promise<string> {
+  const tmpDir = os.tmpdir();
+  const mdPath = path.join(tmpDir, `${filename}.md`);
+  const pdfPath = path.join(tmpDir, `${filename}.pdf`);
+  
+  try {
+    // Write markdown to temp file
+    fs.writeFileSync(mdPath, markdown, 'utf-8');
+    
+    // Convert to PDF using manus-md-to-pdf
+    execSync(`manus-md-to-pdf "${mdPath}" "${pdfPath}"`, {
+      timeout: 60000,
+      stdio: 'pipe'
+    });
+    
+    // Read PDF and convert to base64
+    const pdfBuffer = fs.readFileSync(pdfPath);
+    const base64 = pdfBuffer.toString('base64');
+    
+    // Cleanup temp files
+    try {
+      fs.unlinkSync(mdPath);
+      fs.unlinkSync(pdfPath);
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+    
+    return base64;
+  } catch (error) {
+    // Cleanup on error
+    try {
+      if (fs.existsSync(mdPath)) fs.unlinkSync(mdPath);
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+    console.error('[Export] PDF conversion error:', error);
+    throw new Error('Failed to generate PDF');
+  }
+}
 
 export const exportRouter = router({
   /**
@@ -61,49 +100,18 @@ export const exportRouter = router({
       };
       
       const markdown = generateLongFormReport(stockInfo, analysis);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const pdfBase64 = await markdownToPdf(markdown, `${symbol}_report_${Date.now()}`);
       
-      // Convert markdown to PDF using manus-md-to-pdf utility
-      const timestamp = Date.now();
-      const mdPath = join(tmpdir(), `${symbol}_report_${timestamp}.md`);
-      const pdfPath = join(tmpdir(), `${symbol}_report_${timestamp}.pdf`);
-      
-      try {
-        // Write markdown to temp file
-        await writeFile(mdPath, markdown, 'utf-8');
-        console.log(`[Export] Wrote markdown to ${mdPath}`);
-        
-        // Convert to PDF
-        const { stdout, stderr } = await execAsync(`manus-md-to-pdf "${mdPath}" "${pdfPath}"`);
-        console.log(`[Export] PDF conversion output:`, stdout);
-        if (stderr) console.error(`[Export] PDF conversion errors:`, stderr);
-        
-        // Read PDF as base64
-        const pdfBuffer = await readFile(pdfPath);
-        console.log(`[Export] PDF size: ${pdfBuffer.length} bytes`);
-        const pdfBase64 = pdfBuffer.toString('base64');
-        
-        // Cleanup temp files
-        await unlink(mdPath);
-        await unlink(pdfPath);
-        
-        return {
-          format: "pdf" as const,
-          content: pdfBase64,
-          filename: `${symbol}_Triggerstix_Report_${new Date().toISOString().split('T')[0]}.pdf`,
-        };
-      } catch (error) {
-        // Cleanup on error
-        console.error(`[Export] PDF generation failed:`, error);
-        try {
-          await unlink(mdPath);
-          await unlink(pdfPath);
-        } catch {}
-        throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : String(error)}`);
-      }
+      return {
+        format: "pdf" as const,
+        content: pdfBase64,
+        filename: `${symbol}_Triggerstix_Report_${dateStr}.pdf`,
+      };
     }),
   
   /**
-   * Generate short-form summary
+   * Generate short-form summary PDF
    */
   shortForm: publicProcedure
     .input(z.object({ symbol: z.string() }))
@@ -138,38 +146,21 @@ export const exportRouter = router({
         low52Week: chartData.meta.fiftyTwoWeekLow || currentPrice,
       };
       
+      // Convert summary to markdown format for PDF
       const summary = generateShortFormSummary(stockInfo, analysis);
+      const markdown = `# ${symbol} Quick Summary\n\n${summary}`;
+      const dateStr = new Date().toISOString().split('T')[0];
+      const pdfBase64 = await markdownToPdf(markdown, `${symbol}_summary_${Date.now()}`);
       
-      // Convert to markdown then PDF
-      const markdown = `# ${symbol} - Quick Summary\n\n${summary}`;
-      const timestamp = Date.now();
-      const mdPath = join(tmpdir(), `${symbol}_summary_${timestamp}.md`);
-      const pdfPath = join(tmpdir(), `${symbol}_summary_${timestamp}.pdf`);
-      
-      try {
-        await writeFile(mdPath, markdown, 'utf-8');
-        await execAsync(`manus-md-to-pdf ${mdPath} ${pdfPath}`);
-        const pdfBuffer = await readFile(pdfPath);
-        const pdfBase64 = pdfBuffer.toString('base64');
-        await unlink(mdPath);
-        await unlink(pdfPath);
-        
-        return {
-          format: "pdf" as const,
-          content: pdfBase64,
-          filename: `${symbol}_Summary_${new Date().toISOString().split('T')[0]}.pdf`,
-        };
-      } catch (error) {
-        try {
-          await unlink(mdPath);
-          await unlink(pdfPath);
-        } catch {}
-        throw new Error(`PDF generation failed: ${error}`);
-      }
+      return {
+        format: "pdf" as const,
+        content: pdfBase64,
+        filename: `${symbol}_Summary_${dateStr}.pdf`,
+      };
     }),
   
   /**
-   * Generate slideshow HTML (for PDF conversion)
+   * Generate slideshow PDF
    */
   slideshow: publicProcedure
     .input(z.object({ symbol: z.string() }))
@@ -198,19 +189,68 @@ export const exportRouter = router({
       
       const stockInfo: StockInfo = {
         symbol: chartData.symbol,
-        name: chartData.symbol, // Use symbol as name for now
+        name: chartData.symbol,
         currentPrice,
         high52Week: chartData.meta.fiftyTwoWeekHigh || currentPrice,
         low52Week: chartData.meta.fiftyTwoWeekLow || currentPrice,
       };
       
-      const html = generateSlideshow(stockInfo, analysis);
+      // Generate slideshow as markdown for PDF conversion
+      const markdown = `# ${symbol} Analysis Slides
+
+---
+
+## Slide 1: Overview
+
+**${symbol}** - Current Price: $${currentPrice.toFixed(2)}
+
+- 52-Week High: $${stockInfo.high52Week.toFixed(2)}
+- 52-Week Low: $${stockInfo.low52Week.toFixed(2)}
+
+---
+
+## Slide 2: Triggerstix Score
+
+**Agreement Score:** ${analysis.agreement}%
+
+**Risk Level:** ${analysis.combinedRisk}
+
+**Recommendation:** ${analysis.recommendation.action}
+
+---
+
+## Slide 3: Price Analysis (Gann)
+
+- Rally Angle: ${analysis.gann.rallyAngle.angle}
+- Sustainable Price: $${analysis.gann.rallyAngle.sustainablePrice.toFixed(2)}
+- Deviation: ${analysis.gann.rallyAngle.deviation.toFixed(1)}%
+
+---
+
+## Slide 4: Market Phase (Ney)
+
+- Current Phase: ${analysis.ney.currentPhase}
+- Volume Pattern: ${analysis.ney.volumePattern}
+
+---
+
+## Slide 5: Action Items
+
+${analysis.recommendation.action === 'BUY' ? '✅ Consider entering position' : 
+  analysis.recommendation.action === 'SELL' ? '🔴 Consider exiting position' : 
+  '⚠️ Hold current position'}
+
+- Stop Loss: $${(analysis.recommendation.stopLoss || 0).toFixed(2)}
+- Target: $${(analysis.recommendation.target || 0).toFixed(2)}
+`;
       
-      // For slideshow, return HTML directly (user can print to PDF from browser)
+      const dateStr = new Date().toISOString().split('T')[0];
+      const pdfBase64 = await markdownToPdf(markdown, `${symbol}_slides_${Date.now()}`);
+      
       return {
-        format: "html" as const,
-        content: html,
-        filename: `${symbol}_Slides_${new Date().toISOString().split('T')[0]}.html`,
+        format: "pdf" as const,
+        content: pdfBase64,
+        filename: `${symbol}_Slides_${dateStr}.pdf`,
       };
     }),
 });
