@@ -378,3 +378,15 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Verify chart only recreates when necessary (no errors, HMR working)
 - [x] Test with real ticker analysis (app stable)
 - [ ] Save checkpoint: "Stabilized chart dependencies"
+
+
+## Phase 31: Memoize ChartData to Prevent Recreation
+- [x] Check if analysis.chartData is being recreated on every refetch
+- [x] Use useMemo to stabilize chartData reference
+- [x] Verify chart only recreates when data actually changes
+- [x] Test with real-time updates (30-second refetch)
+- [x] Fixed lightweight-charts v5 API compatibility (addSeries syntax)
+- [x] Fixed scaleMargins configuration for volume histogram
+- [x] Added null safety for price coordinates
+- [x] Chart renders perfectly with no infinite loops
+- [ ] Save checkpoint: "Fully stabilized chart with v5 API and memoized data"

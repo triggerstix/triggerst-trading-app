@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, CandlestickData, Time } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import { Pencil, TrendingUp, Trash2, Minus } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -108,7 +108,7 @@ export default function InteractiveChart({
     chartRef.current = chart;
 
     // Add candlestick series
-    const candlestickSeries = (chart as any).addCandlestickSeries({
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#10b981',
       downColor: '#ef4444',
       borderVisible: false,
@@ -130,12 +130,16 @@ export default function InteractiveChart({
     candlestickSeries.setData(chartData);
 
     // Add volume series
-    const volumeSeries = (chart as any).addHistogramSeries({
+    const volumeSeries = chart.addSeries(HistogramSeries, {
       color: '#3b82f6',
       priceFormat: {
         type: 'volume',
       },
-      priceScaleId: '',
+      priceScaleId: '', // set as overlay
+    });
+
+    // Configure volume series positioning (v5 API)
+    volumeSeries.priceScale().applyOptions({
       scaleMargins: {
         top: 0.8,
         bottom: 0,
@@ -201,6 +205,7 @@ export default function InteractiveChart({
       if (drawingMode === 'none' || !param.point) return;
 
       const price = candlestickSeries.coordinateToPrice(param.point.y);
+      if (price === null) return; // Guard against null price
       const time = param.time;
 
       // Horizontal line only needs one click

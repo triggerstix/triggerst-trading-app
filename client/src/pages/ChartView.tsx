@@ -29,6 +29,9 @@ export default function ChartView() {
   const { data: response, isLoading, error } = analysisQuery;
   const analysis = response;
 
+  // Memoize chartData to prevent chart recreation on refetch
+  const chartData = useMemo(() => analysis?.chartData, [analysis?.chartData]);
+
   // Show toast notification when signals change
   const [prevRecommendation, setPrevRecommendation] = useState<string | null>(null);
   
@@ -324,9 +327,9 @@ export default function ChartView() {
         {/* Chart Area (Left) */}
         <div className="flex-1 p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl h-full overflow-hidden">
-            {analysis?.chartData && (
+            {chartData && (
               <InteractiveChart
-                data={analysis.chartData}
+                data={chartData}
                 symbol={symbol || ''}
                 currentPrice={currentPrice}
                 supportLevels={supportLevels}
