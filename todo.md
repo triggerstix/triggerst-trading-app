@@ -443,3 +443,20 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Update backend to include company profile data
 - [x] Test with multiple tickers (AAPL, MSFT working)
 - [ ] Save checkpoint: "Company info added to chart view"
+
+
+## Phase 38: Unified PDF Export (HON Style)
+- [x] Replace three export buttons with single "Download Analysis" button
+- [x] Create 9-page PDF matching HON Investment Analysis style
+- [x] Page 1: Title page with ticker, company name, date, price
+- [x] Page 2: Executive Summary with BUY/SELL signal, key metrics, agreement
+- [x] Page 3: Gann Analysis (1x4 Rally Angle, Square of Nine levels)
+- [x] Page 4: Ney Analysis (Market Phase, Specialist Behavior)
+- [x] Page 5: Agreement Analysis (comparison table)
+- [x] Page 6: Company Profile with business segments
+- [x] Page 7: Trading Parameters (entry/exit levels)
+- [x] Page 8: Investment Thesis (Bull vs Bear case)
+- [x] Page 9: Methodology explanation and disclaimer
+- [x] Use Liberation Sans font (Arial-compatible)
+- [x] Test with multiple tickers (AAPL 348KB, MSFT 350KB)
+- [ ] Save checkpoint: "Unified Investment Analysis PDF export"

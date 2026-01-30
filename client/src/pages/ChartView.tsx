@@ -129,15 +129,15 @@ export default function ChartView() {
     ];
   }, [analysis?.gann?.rallyAngle?.sustainablePrice]);
 
-  // Export handlers - using direct fetch for PDF downloads
-  const handleExport = async (format: 'longForm' | 'shortForm' | 'slideshow') => {
+  // Export handler - using direct fetch for PDF downloads
+  const handleExport = async () => {
     if (!symbol) return;
     
-    const loadingToast = toast.loading(`Generating ${format === 'longForm' ? 'long-form report' : format === 'shortForm' ? 'short summary' : 'slideshow'}...`);
+    const loadingToast = toast.loading('Generating Investment Analysis PDF...');
     
     try {
       // Use direct fetch to tRPC endpoint for PDF data
-      const endpoint = `/api/trpc/export.${format}?batch=1&input=${encodeURIComponent(JSON.stringify({ "0": { json: { symbol } } }))}`;
+      const endpoint = `/api/trpc/export.investmentAnalysis?batch=1&input=${encodeURIComponent(JSON.stringify({ "0": { json: { symbol } } }))}`;
       const response = await fetch(endpoint);
       
       if (!response.ok) {
@@ -494,40 +494,19 @@ export default function ChartView() {
 
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
-                  EXPORT REPORTS
+                  EXPORT ANALYSIS
                 </h3>
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left"
-                    onClick={() => handleExport('longForm')}
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Full Report
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left"
-                    onClick={() => handleExport('shortForm')}
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    Summary
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left"
-                    onClick={() => handleExport('slideshow')}
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                    </svg>
-                    Slideshow
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20"
+                  onClick={() => handleExport()}
+                >
+                  <svg className="w-4 h-4 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-orange-400">Download Analysis</span>
+                </Button>
+                <p className="text-xs text-slate-500 mt-2">9-page Investment Analysis PDF</p>
               </div>
             </TabsContent>
 
