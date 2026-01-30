@@ -338,3 +338,13 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Update Home.tsx symbol input to auto-convert to uppercase
 - [x] Test symbol input with lowercase letters (verified working)
 - [ ] Save checkpoint: "Uppercase symbol input"
+
+
+## Phase 26: Improve Error Handling
+- [x] Add user-friendly error message for invalid/not-found symbols
+- [x] Display error in ChartView instead of console error
+- [x] Suggest correct ticker if typo detected (e.g., APPL → AAPL)
+- [x] Add "Go Back" button on error state
+- [x] Add "Try [suggestion]" button for quick correction
+- [x] Test with invalid symbols (APPL shows suggestion for AAPL)
+- [ ] Save checkpoint: "Improved error handling"

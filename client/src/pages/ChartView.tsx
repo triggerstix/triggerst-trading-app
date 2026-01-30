@@ -172,14 +172,45 @@ export default function ChartView() {
   }
 
   if (error || !analysis) {
+    // Common ticker typos
+    const suggestions: Record<string, string> = {
+      'APPL': 'AAPL',
+      'GOOGL': 'GOOG',
+      'TSLA': 'TSLA',
+      'AMZN': 'AMZN',
+    };
+    const suggestion = suggestions[symbol || ''];
+
     return (
       <div className="min-h-screen bg-[#0a0e27] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 mb-4">Error loading analysis for {symbol}</p>
-          <Button onClick={() => setLocation("/")} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 mb-6">
+            <p className="text-red-400 text-lg font-semibold mb-2">Symbol Not Found</p>
+            <p className="text-slate-300 mb-4">
+              Unable to fetch data for <span className="font-mono font-bold">{symbol}</span>
+            </p>
+            {suggestion && (
+              <p className="text-slate-400 text-sm">
+                Did you mean <button 
+                  onClick={() => setLocation(`/chart/${suggestion}`)}
+                  className="text-blue-400 hover:text-blue-300 underline font-mono font-bold"
+                >
+                  {suggestion}
+                </button>?
+              </p>
+            )}
+          </div>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => setLocation("/")} variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+            {suggestion && (
+              <Button onClick={() => setLocation(`/chart/${suggestion}`)} className="bg-blue-600 hover:bg-blue-700">
+                Try {suggestion}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );
