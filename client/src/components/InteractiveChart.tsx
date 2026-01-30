@@ -241,7 +241,8 @@ export default function InteractiveChart({
       chart.unsubscribeClick(handleChartClick);
       chart.remove();
     };
-  }, [data, currentPrice, supportLevels, resistanceLevels, drawingMode, drawingStart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, currentPrice, supportLevels, resistanceLevels]);
 
   useEffect(() => {
     if (volumeSeriesRef.current) {

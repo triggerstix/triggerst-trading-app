@@ -363,3 +363,10 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Fix infinite re-render loop (removed prevRecommendation from dependencies)
 - [x] Test app stability (app loads without errors, no infinite loop)
 - [ ] Save checkpoint: "Fixed infinite loop"
+
+
+## Phase 29: Fix InteractiveChart Infinite Loop
+- [x] Check all useEffect hooks in InteractiveChart.tsx
+- [x] Identify and fix the infinite loop at line 81 (removed drawingMode and drawingStart from dependencies)
+- [x] Test chart rendering with real ticker (no errors, app stable)
+- [ ] Save checkpoint: "Fixed InteractiveChart infinite loop"
