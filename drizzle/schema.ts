@@ -30,3 +30,18 @@ export const watchlist = mysqlTable("watchlist", {
 
 export type Watchlist = typeof watchlist.$inferSelect;
 export type InsertWatchlist = typeof watchlist.$inferInsert;
+
+/**
+ * Chart drawings table for persisting user's technical analysis annotations
+ */
+export const chartDrawings = mysqlTable("chart_drawings", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  drawingData: text("drawingData").notNull(), // JSON string of drawing objects
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type ChartDrawing = typeof chartDrawings.$inferSelect;
+export type InsertChartDrawing = typeof chartDrawings.$inferInsert;

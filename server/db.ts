@@ -1,6 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, watchlist, InsertWatchlist } from "../drizzle/schema";
+import { InsertUser, users, watchlist, InsertWatchlist, chartDrawings, InsertChartDrawing } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -150,4 +150,76 @@ export async function isInWatchlist(userId: string, symbol: string): Promise<boo
     .limit(1);
 
   return result.length > 0;
+}
+
+/**
+ * Chart drawings helpers
+ */
+export async function saveChartDrawings(userId: string, symbol: string, drawings: any[]): Promise<{ id: string }> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const id = `${userId}-${symbol.toUpperCase()}`;
+  const drawingData = JSON.stringify(drawings);
+
+  // Upsert: insert or update if exists
+  await db.insert(chartDrawings).values({
+    id,
+    userId,
+    symbol: symbol.toUpperCase(),
+    drawingData,
+    updatedAt: new Date(),
+  }).onDuplicateKeyUpdate({
+    set: {
+      drawingData,
+      updatedAt: new Date(),
+    },
+  });
+
+  return { id };
+}
+
+export async function getChartDrawings(userId: string, symbol: string): Promise<any[]> {
+  const db = await getDb();
+  if (!db) {
+    return [];
+  }
+
+  const result = await db
+    .select()
+    .from(chartDrawings)
+    .where(
+      and(
+        eq(chartDrawings.userId, userId),
+        eq(chartDrawings.symbol, symbol.toUpperCase())
+      )
+    )
+    .limit(1);
+
+  if (result.length === 0) {
+    return [];
+  }
+
+  try {
+    return JSON.parse(result[0].drawingData);
+  } catch (error) {
+    console.error("[Database] Failed to parse drawing data:", error);
+    return [];
+  }
+}
+
+export async function deleteChartDrawings(userId: string, symbol: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.delete(chartDrawings).where(
+    and(
+      eq(chartDrawings.userId, userId),
+      eq(chartDrawings.symbol, symbol.toUpperCase())
+    )
+  );
 }

@@ -97,6 +97,30 @@ export const appRouter = router({
       }),
   }),
 
+  chartDrawings: router({
+    saveDrawings: protectedProcedure
+      .input(z.object({ 
+        symbol: z.string(),
+        drawings: z.array(z.any())
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.saveChartDrawings(ctx.user.id, input.symbol, input.drawings);
+      }),
+
+    getDrawings: protectedProcedure
+      .input(z.object({ symbol: z.string() }))
+      .query(async ({ ctx, input }) => {
+        return db.getChartDrawings(ctx.user.id, input.symbol);
+      }),
+
+    deleteDrawings: protectedProcedure
+      .input(z.object({ symbol: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteChartDrawings(ctx.user.id, input.symbol);
+        return { success: true };
+      }),
+  }),
+
   analysis: router({
     // Analyze stock with real Yahoo Finance data
     analyzeStock: publicProcedure

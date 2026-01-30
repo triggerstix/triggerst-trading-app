@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, CandlestickData, Time } from 'lightweight-charts';
 import { Pencil, TrendingUp, Trash2, Minus } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
 
 interface ChartData {
   time: string;
@@ -31,9 +33,36 @@ export default function InteractiveChart({
   const candlestickSeriesRef = useRef<any>(null);
   const volumeSeriesRef = useRef<any>(null);
   const [showVolume, setShowVolume] = useState(true);
+  const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y'>('1M');
   const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
   const [drawings, setDrawings] = useState<any[]>([]);
   const [drawingStart, setDrawingStart] = useState<{ time: number; price: number } | null>(null);
+
+  // Auth and drawing persistence
+  const { user } = useAuth();
+  const saveDrawingsMutation = trpc.chartDrawings.saveDrawings.useMutation();
+  const { data: savedDrawings } = trpc.chartDrawings.getDrawings.useQuery(
+    { symbol },
+    { enabled: !!user }
+  );
+
+  // Load saved drawings on mount
+  useEffect(() => {
+    if (savedDrawings && savedDrawings.length > 0) {
+      setDrawings(savedDrawings);
+    }
+  }, [savedDrawings]);
+
+  // Auto-save drawings when they change (debounced)
+  useEffect(() => {
+    if (!user || drawings.length === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      saveDrawingsMutation.mutate({ symbol, drawings });
+    }, 1000); // Debounce 1 second
+
+    return () => clearTimeout(timeoutId);
+  }, [drawings, symbol, user]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -280,6 +309,21 @@ export default function InteractiveChart({
 
   return (
     <div className="relative">
+      <div className="absolute top-4 left-4 z-10 flex gap-1">
+        {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y'] as const).map(tf => (
+          <button
+            key={tf}
+            onClick={() => setTimeframe(tf)}
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              timeframe === tf
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            {tf}
+          </button>
+        ))}
+      </div>
       <div className="absolute top-4 right-4 z-10 flex gap-2">
         <button
           onClick={() => setShowVolume(!showVolume)}
