@@ -291,7 +291,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
     <p style="font-size: 24px; color: #1a2b6d; font-family: monospace; margin-bottom: 40px;">
       ${companyName}
     </p>
-    <div class="methodology-badge mb-20">TRIGGERSTIX GANN NEY METHODOLOGY</div>
+    <div class="methodology-badge mb-20">TRIGGERSTIX DUAL-METHOD ANALYSIS</div>
     <p style="font-size: 18px; color: #64748b; font-family: monospace; margin-top: 40px;">
       ${dateStr}
     </p>
@@ -326,7 +326,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
     
     <div>
       <div class="agreement-box text-center mb-20">${agreement}% AGREEMENT</div>
-      <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">GANN + NEY METHODOLOGY ALIGNMENT</p>
+      <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">DUAL-METHOD ANALYSIS ALIGNMENT</p>
       
       <ul class="bullet-list">
         <li>Price at sustainable level (${gann.rallyAngle.angle} rally angle) with ${gann.rallyAngle.angle === '1x1' ? 'strongest' : 'moderate'} momentum indicator</li>
@@ -339,7 +339,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
   </div>
 </div>
 
-<!-- PAGE 3: Gann Analysis -->
+<!-- PAGE 3: Price Analysis -->
 <div class="page">
   <h2>${gann.rallyAngle.angle} Rally Angle Indicates ${gann.rallyAngle.angle === '1x1' ? 'Strongest Sustainable' : gann.rallyAngle.angle === '2x1' ? 'Moderate' : 'Weak'} Trend</h2>
   
@@ -347,7 +347,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
     <div>
       <div class="big-number text-center mb-20">${gann.rallyAngle.angle}</div>
       <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
-        ${gann.rallyAngle.angle === '1x1' ? '45-degree angle represents perfect balance between price and time - strongest sustainable rally pattern in Gann analysis' : 
+        ${gann.rallyAngle.angle === '1x1' ? '45-degree angle represents perfect balance between price and time - strongest sustainable rally pattern' : 
           gann.rallyAngle.angle === '2x1' ? '63-degree angle indicates moderate momentum - sustainable but less powerful than 1x1' :
           'Weaker angle indicates potential overextension or consolidation needed'}
       </p>
@@ -363,7 +363,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
         <tr><td colspan="2" class="price-blue">$${sustainablePrice.toFixed(2)}</td></tr>
         <tr><th>CURRENT PRICE</th><td></td></tr>
         <tr><td colspan="2" class="price-blue">$${currentPrice.toFixed(2)}</td></tr>
-        <tr><th>GANN RISK ASSESSMENT</th><td></td></tr>
+        <tr><th>PRICE RISK ASSESSMENT</th><td></td></tr>
         <tr><td colspan="2"><span class="risk-badge">${gann.riskLevel}</span></td></tr>
       </table>
     </div>
@@ -390,7 +390,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
   </div>
 </div>
 
-<!-- PAGE 4: Ney Analysis -->
+<!-- PAGE 4: Market Phase Analysis -->
 <div class="page">
   <h2>${ney.currentPhase} Phase ${ney.currentPhase.includes('MARKUP') ? 'Offers Optimal Entry Timing' : ney.currentPhase.includes('ACCUMULATION') ? 'Indicates Building Positions' : 'Suggests Caution'}</h2>
   
@@ -398,7 +398,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
     <div>
       <div class="phase-box mb-20">${ney.currentPhase}</div>
       
-      <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">NEY FOUR-PHASE CYCLE</p>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">FOUR-PHASE MARKET CYCLE</p>
       <ul class="phase-list">
         <li class="${ney.currentPhase.includes('ACCUMULATION') ? 'phase-active' : 'phase-inactive'}">
           <span class="${ney.currentPhase.includes('ACCUMULATION') ? 'phase-check' : 'phase-empty'}">■</span> Accumulation ${ney.currentPhase.includes('ACCUMULATION') ? '(current)' : ''}
@@ -455,8 +455,8 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
   <table class="compare-table">
     <tr>
       <th>METRIC</th>
-      <th>GANN ANALYSIS</th>
-      <th>NEY ANALYSIS</th>
+      <th>PRICE ANALYSIS</th>
+      <th>MARKET PHASE</th>
       <th style="color: #e67e22;">AGREEMENT</th>
     </tr>
     <tr>
@@ -487,7 +487,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
   
   <div class="two-col mt-40">
     <div class="accent-bar">
-      <p style="font-size: 14px;"><strong>Methodology Alignment:</strong> Both Gann geometric analysis and Ney specialist behavior independently conclude ${combinedRisk} RISK and ${recommendation.action.toLowerCase()}ish outlook</p>
+      <p style="font-size: 14px;"><strong>Methodology Alignment:</strong> Both price sustainability analysis and institutional activity tracking independently conclude ${combinedRisk} RISK and ${recommendation.action.toLowerCase()}ish outlook</p>
     </div>
     <div class="accent-bar">
       <p style="font-size: 14px;"><strong>Confidence Level:</strong> ${agreement}% agreement provides ${agreement >= 75 ? 'high' : 'moderate'} conviction - ${agreement >= 75 ? 'perfect alignment validates thesis' : 'some divergence warrants monitoring'}</p>
@@ -637,12 +637,12 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
     <div class="case-section bull-case">
       <h3 style="color: #e67e22; font-size: 18px;">BULL CASE</h3>
       <ul class="bullet-list">
-        <li>${gann.rallyAngle.angle} Gann + ${ney.currentPhase.includes('MARKUP') ? 'early MARKUP' : ney.currentPhase} = ${recommendation.action === 'BUY' ? 'ideal' : 'favorable'} entry</li>
+        <li>${gann.rallyAngle.angle} rally angle + ${ney.currentPhase.includes('MARKUP') ? 'early MARKUP' : ney.currentPhase} = ${recommendation.action === 'BUY' ? 'ideal' : 'favorable'} entry</li>
         <li>Target $${targetPrice.toFixed(2)} confirms ${upsidePotential}% upside potential</li>
         <li>${combinedRisk} risk setup with ${agreement}% methodology agreement</li>
         <li>Sustainable price with ${gann.rallyAngle.angle === '1x1' ? 'strong' : 'moderate'} rally momentum</li>
         <li>${ney.volumePattern} volume pattern supports thesis</li>
-        <li>${agreement}% Gann + Ney agreement = high conviction</li>
+        <li>${agreement}% dual-method agreement = high conviction</li>
       </ul>
     </div>
     
@@ -663,7 +663,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
     <h3 style="color: #1a2b6d; font-size: 18px;">NET ASSESSMENT: ${recommendation.action} RECOMMENDATION</h3>
     <p style="font-size: 14px; margin-top: 15px;">
       ${symbol} is a <span style="color: ${actionColor}; font-weight: bold;">${recommendation.action}</span> for ${companyProfile?.sector || 'market'} exposure with ${gann.rallyAngle.angle === '1x1' ? 'strong technical' : 'favorable'} setup. 
-      ${agreement}% Gann + Ney alignment and the ${gann.rallyAngle.angle} rally angle indicate ${ney.currentPhase.includes('MARKUP') || ney.currentPhase.includes('ACCUMULATION') ? 'ideal' : 'acceptable'} entry timing. 
+      ${agreement}% methodology alignment and the ${gann.rallyAngle.angle} rally angle indicate ${ney.currentPhase.includes('MARKUP') || ney.currentPhase.includes('ACCUMULATION') ? 'ideal' : 'acceptable'} entry timing. 
       ${recommendation.reasoning} 
       Risks exist (${combinedRisk === 'LOW' ? 'limited upside, execution, macro' : 'elevated volatility, execution risk'}), but the ${recommendation.action.toLowerCase()} case outweighs concerns.
       Entry $${(currentPrice * 0.995).toFixed(2)}-${(currentPrice * 1.005).toFixed(2)}, target $${targetPrice.toFixed(2)}, stop $${stopLoss.toFixed(2)}.
@@ -673,27 +673,27 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
 
 <!-- PAGE 9: Methodology -->
 <div class="page">
-  <h2>Triggerstix Gann Ney Dual Methodology</h2>
+  <h2>Triggerstix Dual-Method Analysis Framework</h2>
   
   <div class="two-col mt-20">
     <div class="accent-bar">
-      <h3 style="color: #e67e22; font-size: 16px;">GANN GEOMETRIC ANALYSIS</h3>
-      <p style="font-size: 13px; margin-bottom: 15px;">W.D. Gann's geometric approach analyzes price movement through mathematical angles and natural cycles</p>
+      <h3 style="color: #e67e22; font-size: 16px;">PRICE SUSTAINABILITY ANALYSIS</h3>
+      <p style="font-size: 13px; margin-bottom: 15px;">Geometric analysis of price movement through mathematical angles and natural market cycles</p>
       <ul class="bullet-list">
-        <li>Rally angles: 1x1 (45°) strongest, 2x1 moderate, 1x2 weakest</li>
+        <li>Rally angles: 1x1 (45°) strongest, 2x1 moderate, 1x4 weakest</li>
         <li>Sustainable price: calculated from low + (days × rally rate)</li>
-        <li>Square of Nine: support/resistance levels based on geometric progressions</li>
+        <li>Key levels: support/resistance based on geometric progressions</li>
         <li>Risk assessment: based on price deviation from sustainable level</li>
       </ul>
     </div>
     
     <div class="accent-bar">
-      <h3 style="color: #e67e22; font-size: 16px;">NEY SPECIALIST BEHAVIOR</h3>
-      <p style="font-size: 13px; margin-bottom: 15px;">Richard Ney's approach tracks institutional specialist behavior through four-phase market cycle</p>
+      <h3 style="color: #e67e22; font-size: 16px;">INSTITUTIONAL ACTIVITY TRACKING</h3>
+      <p style="font-size: 13px; margin-bottom: 15px;">Tracks institutional specialist behavior through the four-phase market cycle</p>
       <ul class="bullet-list">
-        <li>ACCUMULATION: specialists building positions at low prices</li>
+        <li>ACCUMULATION: institutions building positions at low prices</li>
         <li>MARKUP: price appreciation toward fair value</li>
-        <li>DISTRIBUTION: specialists selling to retail at high prices</li>
+        <li>DISTRIBUTION: institutions selling to retail at high prices</li>
         <li>MARKDOWN: price decline back to value</li>
       </ul>
     </div>
@@ -707,7 +707,7 @@ export function generateInvestmentAnalysisHtml(data: InvestmentAnalysisData): st
   <div class="accent-bar mt-10">
     <h3 style="color: #1a2b6d; font-size: 16px;">RISK ASSESSMENT APPROACH</h3>
     <p style="font-size: 13px;">
-      <span style="color: #27ae60; font-weight: bold;">LOW RISK:</span> Price at/near sustainable level + favorable Ney phase (ACCUMULATION/early MARKUP) + 100% agreement. 
+      <span style="color: #27ae60; font-weight: bold;">LOW RISK:</span> Price at/near sustainable level + favorable market phase (ACCUMULATION/early MARKUP) + 100% agreement. 
       <span style="color: #f39c12; font-weight: bold;">MODERATE RISK:</span> Price moderately extended or late MARKUP phase. 
       <span style="color: #e74c3c; font-weight: bold;">HIGH RISK:</span> Price significantly overextended or DISTRIBUTION phase or methodology disagreement.
     </p>
