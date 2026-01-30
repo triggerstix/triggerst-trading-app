@@ -414,121 +414,126 @@ export default function InteractiveChart({
 
   return (
     <div className="relative">
-      <div className="absolute top-4 left-4 z-10 flex gap-1">
-        {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y'] as const).map(tf => (
+      {/* Top toolbar - Drawing tools and indicators */}
+      <div className="absolute top-4 left-4 right-4 z-10 flex flex-col gap-2">
+        {/* Row 1: Timeframe buttons */}
+        <div className="flex gap-1">
+          {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y'] as const).map(tf => (
+            <button
+              key={tf}
+              onClick={() => setTimeframe(tf)}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                timeframe === tf
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
+        {/* Row 2: Drawing tools, volume, and indicators */}
+        <div className="flex gap-2 flex-wrap">
           <button
-            key={tf}
-            onClick={() => setTimeframe(tf)}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              timeframe === tf
+            onClick={() => setShowVolume(!showVolume)}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              showVolume
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
             }`}
           >
-            {tf}
+            Volume
           </button>
-        ))}
-      </div>
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <button
-          onClick={() => setShowVolume(!showVolume)}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-            showVolume
-              ? 'bg-blue-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-          }`}
-        >
-          Volume
-        </button>
-        <button
-          onClick={() => setDrawingMode(drawingMode === 'trendline' ? 'none' : 'trendline')}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
-            drawingMode === 'trendline'
-              ? 'bg-cyan-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-          }`}
-          title="Draw Trendline"
-        >
-          <Pencil className="w-4 h-4" />
-          Trendline
-        </button>
-        <button
-          onClick={() => setDrawingMode(drawingMode === 'fibonacci' ? 'none' : 'fibonacci')}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
-            drawingMode === 'fibonacci'
-              ? 'bg-purple-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-          }`}
-          title="Draw Fibonacci Retracement"
-        >
-          <TrendingUp className="w-4 h-4" />
-          Fibonacci
-        </button>
-        <button
-          onClick={() => setDrawingMode(drawingMode === 'horizontal' ? 'none' : 'horizontal')}
-          className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
-            drawingMode === 'horizontal'
-              ? 'bg-yellow-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-          }`}
-          title="Draw Horizontal Line"
-        >
-          <Minus className="w-4 h-4" />
-          H-Line
-        </button>
-        <div className="border-l border-slate-700 mx-1" />
-        <button
-          onClick={() => {
-            setShowSMA20(!showSMA20);
-            sma20SeriesRef.current?.applyOptions({ visible: !showSMA20 });
-          }}
-          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-            showSMA20
-              ? 'bg-yellow-500 text-black'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-          }`}
-          title="20-period Simple Moving Average"
-        >
-          SMA20
-        </button>
-        <button
-          onClick={() => {
-            setShowSMA50(!showSMA50);
-            sma50SeriesRef.current?.applyOptions({ visible: !showSMA50 });
-          }}
-          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-            showSMA50
-              ? 'bg-orange-500 text-black'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-          }`}
-          title="50-period Simple Moving Average"
-        >
-          SMA50
-        </button>
-        <button
-          onClick={() => {
-            setShowSMA200(!showSMA200);
-            sma200SeriesRef.current?.applyOptions({ visible: !showSMA200 });
-          }}
-          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-            showSMA200
-              ? 'bg-purple-500 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-          }`}
-          title="200-period Simple Moving Average"
-        >
-          SMA200
-        </button>
-        {drawings.length > 0 && (
           <button
-            onClick={() => setDrawings([])}
-            className="px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 bg-red-600 text-white hover:bg-red-700"
-            title="Clear All Drawings"
+            onClick={() => setDrawingMode(drawingMode === 'trendline' ? 'none' : 'trendline')}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
+              drawingMode === 'trendline'
+                ? 'bg-cyan-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+            title="Draw Trendline"
           >
-            <Trash2 className="w-4 h-4" />
-            Clear
+            <Pencil className="w-4 h-4" />
+            Trendline
           </button>
-        )}
+          <button
+            onClick={() => setDrawingMode(drawingMode === 'fibonacci' ? 'none' : 'fibonacci')}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
+              drawingMode === 'fibonacci'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+            title="Draw Fibonacci Retracement"
+          >
+            <TrendingUp className="w-4 h-4" />
+            Fibonacci
+          </button>
+          <button
+            onClick={() => setDrawingMode(drawingMode === 'horizontal' ? 'none' : 'horizontal')}
+            className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
+              drawingMode === 'horizontal'
+                ? 'bg-yellow-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+            title="Draw Horizontal Line"
+          >
+            <Minus className="w-4 h-4" />
+            H-Line
+          </button>
+          <div className="border-l border-slate-700 mx-1" />
+          <button
+            onClick={() => {
+              setShowSMA20(!showSMA20);
+              sma20SeriesRef.current?.applyOptions({ visible: !showSMA20 });
+            }}
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              showSMA20
+                ? 'bg-yellow-500 text-black'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+            title="20-period Simple Moving Average"
+          >
+            SMA20
+          </button>
+          <button
+            onClick={() => {
+              setShowSMA50(!showSMA50);
+              sma50SeriesRef.current?.applyOptions({ visible: !showSMA50 });
+            }}
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              showSMA50
+                ? 'bg-orange-500 text-black'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+            title="50-period Simple Moving Average"
+          >
+            SMA50
+          </button>
+          <button
+            onClick={() => {
+              setShowSMA200(!showSMA200);
+              sma200SeriesRef.current?.applyOptions({ visible: !showSMA200 });
+            }}
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              showSMA200
+                ? 'bg-purple-500 text-white'
+                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+            title="200-period Simple Moving Average"
+          >
+            SMA200
+          </button>
+          {drawings.length > 0 && (
+            <button
+              onClick={() => setDrawings([])}
+              className="px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 bg-red-600 text-white hover:bg-red-700"
+              title="Clear All Drawings"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear
+            </button>
+          )}
+        </div>
       </div>
       <div ref={chartContainerRef} className="w-full" />
     </div>
