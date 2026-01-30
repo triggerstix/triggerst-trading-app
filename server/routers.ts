@@ -141,8 +141,11 @@ export const appRouter = router({
         };
         const { range, interval } = timeframeMap[input.timeframe];
         
-        // Fetch historical data based on timeframe
-        const chartData = await stockData.getHistoricalData(input.symbol, range, interval);
+        // Fetch historical data and company profile in parallel
+        const [chartData, companyProfile] = await Promise.all([
+          stockData.getHistoricalData(input.symbol, range, interval),
+          stockData.getCompanyProfile(input.symbol),
+        ]);
         
         if (!chartData || chartData.historical.length === 0) {
           throw new Error(`Unable to fetch data for symbol: ${input.symbol}`);
@@ -185,6 +188,13 @@ export const appRouter = router({
             startDate: start.date.toISOString(),
             tradingDays,
           },
+          companyProfile: companyProfile ? {
+            shortName: companyProfile.shortName,
+            longName: companyProfile.longName,
+            sector: companyProfile.sector,
+            industry: companyProfile.industry,
+            longBusinessSummary: companyProfile.longBusinessSummary,
+          } : null,
           chartData: historical.map(h => {
             // Use Unix timestamp for intraday data, date string for daily+
             const isIntraday = ['1D', '1W', '1M'].includes(input.timeframe);

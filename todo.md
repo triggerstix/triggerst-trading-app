@@ -434,3 +434,12 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [ ] Display EMA lines on chart (different colors from SMA)
 - [ ] Test EMA indicators
 - [ ] Save checkpoint: "EMA indicators added"
+
+
+## Phase 37: Company Name and Description
+- [x] Add company name to chart header (e.g., "Microsoft Corporation")
+- [x] Add brief company description below header
+- [x] Fetch company info from Yahoo Finance API
+- [x] Update backend to include company profile data
+- [x] Test with multiple tickers (AAPL, MSFT working)
+- [ ] Save checkpoint: "Company info added to chart view"

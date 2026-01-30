@@ -299,6 +299,15 @@ export default function ChartView() {
                   {combinedRisk} RISK
                 </span>
               </div>
+              {/* Company Name */}
+              {analysis.companyProfile?.longName && (
+                <p className="text-slate-400 text-sm mt-0.5">
+                  {analysis.companyProfile.longName}
+                  {analysis.companyProfile.sector && (
+                    <span className="text-slate-500"> • {analysis.companyProfile.sector}</span>
+                  )}
+                </p>
+              )}
               <div className="flex items-center gap-4 mt-1">
                 <span className="text-2xl font-semibold">
                   ${currentPrice.toFixed(2)}
@@ -399,6 +408,25 @@ export default function ChartView() {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="p-3 space-y-3">
+              {/* Company Description */}
+              {analysis.companyProfile?.longBusinessSummary && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-400 mb-2">
+                    ABOUT {symbol}
+                  </h3>
+                  <div className="bg-slate-900 border border-slate-800 rounded-lg p-3">
+                    <p className="text-xs text-slate-300 leading-relaxed line-clamp-4">
+                      {analysis.companyProfile.longBusinessSummary}
+                    </p>
+                    {analysis.companyProfile.industry && (
+                      <p className="text-xs text-slate-500 mt-2">
+                        Industry: {analysis.companyProfile.industry}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
                   COMBINED ANALYSIS

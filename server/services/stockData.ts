@@ -5,6 +5,18 @@
 
 import { callDataApi } from "../_core/dataApi";
 
+export interface CompanyProfile {
+  symbol: string;
+  shortName: string;
+  longName: string;
+  sector?: string;
+  industry?: string;
+  website?: string;
+  longBusinessSummary?: string;
+  country?: string;
+  fullTimeEmployees?: number;
+}
+
 export interface StockQuote {
   symbol: string;
   price: number;
@@ -201,4 +213,52 @@ export function preparePriceDataForNey(historical: HistoricalDataPoint[]): Array
     volume: point.volume,
     date: point.date.toISOString(),
   }));
+}
+
+
+/**
+ * Fetch company profile information (name, description, sector, etc.)
+ */
+export async function getCompanyProfile(symbol: string): Promise<CompanyProfile | null> {
+  try {
+    const response: any = await callDataApi("YahooFinance/get_stock_profile", {
+      query: {
+        symbol: symbol.toUpperCase(),
+        region: "US",
+        lang: "en-US",
+      },
+    });
+
+    if (!response) {
+      console.error(`No profile data found for symbol: ${symbol}`);
+      return null;
+    }
+
+    // Parse the quoteSummary response structure
+    const result = response.quoteSummary?.result?.[0];
+    if (!result) {
+      console.error(`No quoteSummary result for symbol: ${symbol}`);
+      return null;
+    }
+
+    const summaryProfile = result.summaryProfile || {};
+    const quoteType = result.quoteType || {};
+
+    const profile: CompanyProfile = {
+      symbol: quoteType.symbol || symbol.toUpperCase(),
+      shortName: quoteType.shortName || quoteType.longName || symbol.toUpperCase(),
+      longName: quoteType.longName || quoteType.shortName || symbol.toUpperCase(),
+      sector: summaryProfile.sector,
+      industry: summaryProfile.industry,
+      website: summaryProfile.website,
+      longBusinessSummary: summaryProfile.longBusinessSummary,
+      country: summaryProfile.country,
+      fullTimeEmployees: summaryProfile.fullTimeEmployees,
+    };
+
+    return profile;
+  } catch (error) {
+    console.error(`Error fetching company profile for ${symbol}:`, error);
+    return null;
+  }
 }
