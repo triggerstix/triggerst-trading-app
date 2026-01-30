@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
-import { Pencil, TrendingUp, Trash2, Minus } from 'lucide-react';
+import { Pencil, TrendingUp, Trash2, Minus, MousePointer2, Type, Ruler, ZoomIn, ZoomOut, Crosshair, BarChart3, Activity } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 
@@ -21,6 +21,7 @@ interface InteractiveChartProps {
   resistanceLevels?: number[];
   timeframe?: '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y';
   onTimeframeChange?: (tf: '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y') => void;
+  ohlc?: { open: number; high: number; low: number; close: number; change: number; changePercent: number; volume: number };
 }
 
 export default function InteractiveChart({ 
@@ -30,7 +31,8 @@ export default function InteractiveChart({
   supportLevels = [],
   resistanceLevels = [],
   timeframe: externalTimeframe,
-  onTimeframeChange
+  onTimeframeChange,
+  ohlc
 }: InteractiveChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -56,6 +58,14 @@ export default function InteractiveChart({
   const sma20SeriesRef = useRef<any>(null);
   const sma50SeriesRef = useRef<any>(null);
   const sma200SeriesRef = useRef<any>(null);
+  
+  // RSI and MACD indicator states
+  const [showRSI, setShowRSI] = useState(false);
+  const [showMACD, setShowMACD] = useState(false);
+  const rsiChartRef = useRef<IChartApi | null>(null);
+  const macdChartRef = useRef<IChartApi | null>(null);
+  const rsiContainerRef = useRef<HTMLDivElement>(null);
+  const macdContainerRef = useRef<HTMLDivElement>(null);
 
   // Auth and drawing persistence
   const { user } = useAuth();
@@ -333,6 +343,117 @@ export default function InteractiveChart({
     }
   }, [showVolume]);
 
+  // RSI Chart
+  useEffect(() => {
+    if (!showRSI || !rsiContainerRef.current || data.length < 14) return;
+
+    // Calculate RSI
+    const calculateRSI = (period: number = 14) => {
+      const rsiData: { time: Time; value: number }[] = [];
+      let gains = 0, losses = 0;
+      
+      for (let i = 1; i <= period; i++) {
+        const change = data[i].close - data[i - 1].close;
+        if (change > 0) gains += change;
+        else losses -= change;
+      }
+      
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      
+      for (let i = period; i < data.length; i++) {
+        if (i > period) {
+          const change = data[i].close - data[i - 1].close;
+          avgGain = (avgGain * (period - 1) + (change > 0 ? change : 0)) / period;
+          avgLoss = (avgLoss * (period - 1) + (change < 0 ? -change : 0)) / period;
+        }
+        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        const rsi = 100 - (100 / (1 + rs));
+        rsiData.push({ time: data[i].time as Time, value: rsi });
+      }
+      return rsiData;
+    };
+
+    const rsiChart = createChart(rsiContainerRef.current, {
+      width: rsiContainerRef.current.clientWidth,
+      height: 100,
+      layout: { background: { color: '#0f172a' }, textColor: '#94a3b8' },
+      grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+      rightPriceScale: { borderColor: '#334155', scaleMargins: { top: 0.1, bottom: 0.1 } },
+      timeScale: { visible: false },
+    });
+    rsiChartRef.current = rsiChart;
+
+    const rsiSeries = rsiChart.addSeries(LineSeries, {
+      color: '#3b82f6',
+      lineWidth: 2,
+      priceLineVisible: false,
+    });
+    rsiSeries.setData(calculateRSI());
+
+    // Add overbought/oversold lines
+    rsiSeries.createPriceLine({ price: 70, color: '#ef4444', lineWidth: 1, lineStyle: 2 });
+    rsiSeries.createPriceLine({ price: 30, color: '#10b981', lineWidth: 1, lineStyle: 2 });
+
+    return () => { rsiChart.remove(); };
+  }, [showRSI, data]);
+
+  // MACD Chart
+  useEffect(() => {
+    if (!showMACD || !macdContainerRef.current || data.length < 26) return;
+
+    // Calculate EMA
+    const calculateEMA = (period: number, prices: number[]) => {
+      const k = 2 / (period + 1);
+      const ema: number[] = [prices[0]];
+      for (let i = 1; i < prices.length; i++) {
+        ema.push(prices[i] * k + ema[i - 1] * (1 - k));
+      }
+      return ema;
+    };
+
+    const closes = data.map(d => d.close);
+    const ema12 = calculateEMA(12, closes);
+    const ema26 = calculateEMA(26, closes);
+    const macdLine = ema12.map((v, i) => v - ema26[i]);
+    const signalLine = calculateEMA(9, macdLine.slice(25));
+
+    const macdData: { time: Time; value: number }[] = [];
+    const signalData: { time: Time; value: number }[] = [];
+    const histogramData: { time: Time; value: number; color: string }[] = [];
+
+    for (let i = 25; i < data.length; i++) {
+      macdData.push({ time: data[i].time as Time, value: macdLine[i] });
+      if (i >= 33) {
+        const sig = signalLine[i - 33];
+        signalData.push({ time: data[i].time as Time, value: sig });
+        const hist = macdLine[i] - sig;
+        histogramData.push({ time: data[i].time as Time, value: hist, color: hist >= 0 ? '#10b981' : '#ef4444' });
+      }
+    }
+
+    const macdChart = createChart(macdContainerRef.current, {
+      width: macdContainerRef.current.clientWidth,
+      height: 100,
+      layout: { background: { color: '#0f172a' }, textColor: '#94a3b8' },
+      grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+      rightPriceScale: { borderColor: '#334155', scaleMargins: { top: 0.1, bottom: 0.1 } },
+      timeScale: { visible: false },
+    });
+    macdChartRef.current = macdChart;
+
+    const histSeries = macdChart.addSeries(HistogramSeries, { priceLineVisible: false });
+    histSeries.setData(histogramData);
+
+    const macdSeries = macdChart.addSeries(LineSeries, { color: '#3b82f6', lineWidth: 2, priceLineVisible: false });
+    macdSeries.setData(macdData);
+
+    const sigSeries = macdChart.addSeries(LineSeries, { color: '#f97316', lineWidth: 2, priceLineVisible: false });
+    sigSeries.setData(signalData);
+
+    return () => { macdChart.remove(); };
+  }, [showMACD, data]);
+
   // Render drawings
   useEffect(() => {
     if (!candlestickSeriesRef.current || !chartRef.current) return;
@@ -413,129 +534,192 @@ export default function InteractiveChart({
   }, [drawings]);
 
   return (
-    <div className="relative">
-      {/* Top toolbar - Drawing tools and indicators */}
-      <div className="absolute top-4 left-4 right-4 z-10 flex flex-col gap-2">
-        {/* Row 1: Timeframe buttons */}
-        <div className="flex gap-1">
-          {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y'] as const).map(tf => (
-            <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                timeframe === tf
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
-        {/* Row 2: Drawing tools, volume, and indicators */}
-        <div className="flex gap-2 flex-wrap">
+    <div className="relative flex">
+      {/* Left vertical toolbar - Webull style */}
+      <div className="w-10 bg-slate-900 border-r border-slate-700 flex flex-col items-center py-2 gap-1">
+        <button
+          onClick={() => setDrawingMode('none')}
+          className={`p-2 rounded transition-colors ${
+            drawingMode === 'none' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+          }`}
+          title="Select"
+        >
+          <MousePointer2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setDrawingMode(drawingMode === 'trendline' ? 'none' : 'trendline')}
+          className={`p-2 rounded transition-colors ${
+            drawingMode === 'trendline' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+          }`}
+          title="Trendline"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setDrawingMode(drawingMode === 'horizontal' ? 'none' : 'horizontal')}
+          className={`p-2 rounded transition-colors ${
+            drawingMode === 'horizontal' ? 'bg-yellow-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+          }`}
+          title="Horizontal Line"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setDrawingMode(drawingMode === 'fibonacci' ? 'none' : 'fibonacci')}
+          className={`p-2 rounded transition-colors ${
+            drawingMode === 'fibonacci' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+          }`}
+          title="Fibonacci Retracement"
+        >
+          <Ruler className="w-4 h-4" />
+        </button>
+        <div className="border-t border-slate-700 w-6 my-1" />
+        <button
+          onClick={() => setShowVolume(!showVolume)}
+          className={`p-2 rounded transition-colors ${
+            showVolume ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+          }`}
+          title="Toggle Volume"
+        >
+          <BarChart3 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setShowRSI(!showRSI)}
+          className={`p-2 rounded transition-colors text-xs font-bold ${
+            showRSI ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+          }`}
+          title="RSI (14)"
+        >
+          RSI
+        </button>
+        <button
+          onClick={() => setShowMACD(!showMACD)}
+          className={`p-2 rounded transition-colors text-xs font-bold ${
+            showMACD ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+          }`}
+          title="MACD (12,26,9)"
+        >
+          MCD
+        </button>
+        <div className="border-t border-slate-700 w-6 my-1" />
+        {drawings.length > 0 && (
           <button
-            onClick={() => setShowVolume(!showVolume)}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-              showVolume
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+            onClick={() => setDrawings([])}
+            className="p-2 rounded text-red-400 hover:bg-slate-800 transition-colors"
+            title="Clear All Drawings"
           >
-            Volume
+            <Trash2 className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => setDrawingMode(drawingMode === 'trendline' ? 'none' : 'trendline')}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
-              drawingMode === 'trendline'
-                ? 'bg-cyan-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-            title="Draw Trendline"
-          >
-            <Pencil className="w-4 h-4" />
-            Trendline
-          </button>
-          <button
-            onClick={() => setDrawingMode(drawingMode === 'fibonacci' ? 'none' : 'fibonacci')}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
-              drawingMode === 'fibonacci'
-                ? 'bg-purple-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-            title="Draw Fibonacci Retracement"
-          >
-            <TrendingUp className="w-4 h-4" />
-            Fibonacci
-          </button>
-          <button
-            onClick={() => setDrawingMode(drawingMode === 'horizontal' ? 'none' : 'horizontal')}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
-              drawingMode === 'horizontal'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-            title="Draw Horizontal Line"
-          >
-            <Minus className="w-4 h-4" />
-            H-Line
-          </button>
-          <div className="border-l border-slate-700 mx-1" />
-          <button
-            onClick={() => {
-              setShowSMA20(!showSMA20);
-              sma20SeriesRef.current?.applyOptions({ visible: !showSMA20 });
-            }}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              showSMA20
-                ? 'bg-yellow-500 text-black'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-            title="20-period Simple Moving Average"
-          >
-            SMA20
-          </button>
-          <button
-            onClick={() => {
-              setShowSMA50(!showSMA50);
-              sma50SeriesRef.current?.applyOptions({ visible: !showSMA50 });
-            }}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              showSMA50
-                ? 'bg-orange-500 text-black'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-            title="50-period Simple Moving Average"
-          >
-            SMA50
-          </button>
-          <button
-            onClick={() => {
-              setShowSMA200(!showSMA200);
-              sma200SeriesRef.current?.applyOptions({ visible: !showSMA200 });
-            }}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              showSMA200
-                ? 'bg-purple-500 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
-            title="200-period Simple Moving Average"
-          >
-            SMA200
-          </button>
-          {drawings.length > 0 && (
-            <button
-              onClick={() => setDrawings([])}
-              className="px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 bg-red-600 text-white hover:bg-red-700"
-              title="Clear All Drawings"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear
-            </button>
-          )}
-        </div>
+        )}
       </div>
-      <div ref={chartContainerRef} className="w-full" />
+      
+      {/* Main chart area */}
+      <div className="flex-1 relative">
+        {/* OHLC Header - Webull style */}
+        {ohlc && (
+          <div className="bg-slate-900/95 border-b border-slate-700 px-3 py-2">
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-white font-semibold">{symbol}</span>
+              <span className="text-slate-400">O</span>
+              <span className="text-white">{ohlc.open.toFixed(2)}</span>
+              <span className="text-slate-400">H</span>
+              <span className="text-emerald-400">{ohlc.high.toFixed(2)}</span>
+              <span className="text-slate-400">L</span>
+              <span className="text-red-400">{ohlc.low.toFixed(2)}</span>
+              <span className="text-slate-400">C</span>
+              <span className={ohlc.change >= 0 ? 'text-emerald-400' : 'text-red-400'}>{ohlc.close.toFixed(2)}</span>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium ${ohlc.change >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                {ohlc.change >= 0 ? '+' : ''}{ohlc.change.toFixed(2)} ({ohlc.changePercent >= 0 ? '+' : ''}{ohlc.changePercent.toFixed(2)}%)
+              </span>
+              <span className="text-slate-400 ml-auto">Vol</span>
+              <span className="text-cyan-400">{(ohlc.volume / 1000000).toFixed(2)}M</span>
+            </div>
+          </div>
+        )}
+        {/* Top toolbar - Timeframe and indicators */}
+        <div className="absolute top-2 left-2 right-2 z-10 flex justify-between items-center" style={{ top: ohlc ? '48px' : '8px' }}>
+          {/* Timeframe buttons */}
+          <div className="flex gap-1">
+            {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y'] as const).map(tf => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  timeframe === tf
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+          </div>
+          {/* SMA indicators */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => {
+                setShowSMA20(!showSMA20);
+                sma20SeriesRef.current?.applyOptions({ visible: !showSMA20 });
+              }}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                showSMA20 ? 'bg-yellow-500 text-black' : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
+              }`}
+              title="20-period SMA"
+            >
+              MA20
+            </button>
+            <button
+              onClick={() => {
+                setShowSMA50(!showSMA50);
+                sma50SeriesRef.current?.applyOptions({ visible: !showSMA50 });
+              }}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                showSMA50 ? 'bg-orange-500 text-black' : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
+              }`}
+              title="50-period SMA"
+            >
+              MA50
+            </button>
+            <button
+              onClick={() => {
+                setShowSMA200(!showSMA200);
+                sma200SeriesRef.current?.applyOptions({ visible: !showSMA200 });
+              }}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                showSMA200 ? 'bg-purple-500 text-white' : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
+              }`}
+              title="200-period SMA"
+            >
+              MA200
+            </button>
+          </div>
+        </div>
+        <div ref={chartContainerRef} className="w-full flex-1" style={{ minHeight: showRSI || showMACD ? 'calc(100% - 220px)' : '100%' }} />
+        
+        {/* RSI Indicator Pane */}
+        {showRSI && (
+          <div className="border-t border-slate-700">
+            <div className="px-2 py-1 bg-slate-900/80 text-xs text-slate-400 flex items-center gap-2">
+              <span className="text-blue-400 font-medium">RSI</span>
+              <span>14 close</span>
+            </div>
+            <div ref={rsiContainerRef} className="w-full" />
+          </div>
+        )}
+        
+        {/* MACD Indicator Pane */}
+        {showMACD && (
+          <div className="border-t border-slate-700">
+            <div className="px-2 py-1 bg-slate-900/80 text-xs text-slate-400 flex items-center gap-2">
+              <span className="text-orange-400 font-medium">MACD</span>
+              <span>12 26 close 9</span>
+              <span className="text-blue-400">EMA</span>
+              <span className="text-orange-400">EMA</span>
+            </div>
+            <div ref={macdContainerRef} className="w-full" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

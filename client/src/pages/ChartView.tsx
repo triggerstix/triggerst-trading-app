@@ -32,6 +32,24 @@ export default function ChartView() {
 
   // Memoize chartData to prevent chart recreation on refetch
   const chartData = useMemo(() => analysis?.chartData, [analysis?.chartData]);
+  
+  // Calculate OHLC from latest data for header display (must be before early returns)
+  const ohlcData = useMemo(() => {
+    if (!chartData || chartData.length === 0) return undefined;
+    const latest = chartData[chartData.length - 1];
+    const previous = chartData.length > 1 ? chartData[chartData.length - 2] : latest;
+    const change = latest.close - previous.close;
+    const changePercent = (change / previous.close) * 100;
+    return {
+      open: latest.open,
+      high: latest.high,
+      low: latest.low,
+      close: latest.close,
+      change,
+      changePercent,
+      volume: latest.volume
+    };
+  }, [chartData]);
 
   // Show toast notification when signals change
   const [prevRecommendation, setPrevRecommendation] = useState<string | null>(null);
@@ -252,7 +270,7 @@ export default function ChartView() {
   const { gann, ney, combinedRisk, agreement, recommendation } = analysis;
   const currentPrice = response?.stockInfo?.currentPrice || 0;
   const pivotPrice = gann.rallyAngle.sustainablePrice;
-
+  
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
       {/* Header */}
@@ -357,6 +375,7 @@ export default function ChartView() {
                 resistanceLevels={resistanceLevels}
                 timeframe={timeframe}
                 onTimeframeChange={setTimeframe}
+                ohlc={ohlcData}
               />
             )}
             {!analysis?.chartData && (
