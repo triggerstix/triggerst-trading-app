@@ -398,3 +398,39 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Fix the error in InteractiveChart.tsx (added cleanup for drawing series/price lines)
 - [x] Test chart zoom, pan, and timeline adjustments
 - [x] Save checkpoint: "Chart timeline interaction error fixed"
+
+
+## Phase 33: Fix Slideshow PDF Export
+- [x] Investigate empty 0-byte PDF download issue
+- [x] Identify root cause: URL.revokeObjectURL() called too early
+- [x] Add 2-second delay before revoking blob URL
+- [x] Test slideshow export (270KB PDF downloads correctly)
+- [ ] Save checkpoint: "Slideshow PDF export fixed"
+
+
+## Phase 34: Analysis History Page
+- [ ] Create AnalysisHistory page component
+- [ ] Add /history route to App.tsx
+- [ ] Create database table for analysis history (user_id, symbol, timestamp, score, recommendation)
+- [ ] Add tRPC procedures for saving/loading analysis history
+- [ ] Display chronological list of analyzed tickers
+- [ ] Add quick re-analysis buttons
+- [ ] Add link to history from ChartView
+- [ ] Test history functionality
+- [ ] Save checkpoint: "Analysis history page complete"
+
+
+## Phase 35: Keyboard Shortcuts
+- [ ] Implement hotkeys for drawing tools (T=trendline, F=Fibonacci, H=horizontal line)
+- [ ] Add hotkeys for timeframes (1-7 for 1D/1W/1M/3M/6M/1Y/5Y)
+- [ ] Add keyboard shortcut help modal (? key)
+- [ ] Test all keyboard shortcuts
+- [ ] Save checkpoint: "Keyboard shortcuts implemented"
+
+
+## Phase 36: EMA Indicators
+- [ ] Add EMA calculation function (12/26 periods)
+- [ ] Add EMA toggle buttons to chart toolbar
+- [ ] Display EMA lines on chart (different colors from SMA)
+- [ ] Test EMA indicators
+- [ ] Save checkpoint: "EMA indicators added"

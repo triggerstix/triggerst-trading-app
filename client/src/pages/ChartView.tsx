@@ -167,7 +167,8 @@ export default function ChartView() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Delay URL revocation to allow download to complete
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
       
       toast.dismiss(loadingToast);
       toast.success('Export complete!');
