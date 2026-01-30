@@ -304,17 +304,17 @@ export default function ChartView() {
                 </span>
                 <span
                   className={`flex items-center gap-1 ${
-                    currentPrice >= pivotPrice
+                    ohlcData && ohlcData.changePercent >= 0
                       ? "text-green-400"
                       : "text-red-400"
                   }`}
                 >
-                  {currentPrice >= pivotPrice ? (
+                  {ohlcData && ohlcData.changePercent >= 0 ? (
                     <TrendingUp className="w-4 h-4" />
                   ) : (
                     <TrendingDown className="w-4 h-4" />
                   )}
-                  {gann.rallyAngle.deviation.toFixed(2)}%
+                  {ohlcData ? `${ohlcData.changePercent >= 0 ? '+' : ''}${ohlcData.changePercent.toFixed(2)}%` : '0.00%'}
                 </span>
               </div>
             </div>
@@ -388,7 +388,7 @@ export default function ChartView() {
         </div>
 
         {/* Analysis Panel (Right) */}
-        <div className="w-96 border-l border-slate-800 bg-[#0d1129] overflow-y-auto">
+        <div className="w-80 min-w-80 border-l border-slate-800 bg-[#0d1129] overflow-y-auto">
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="w-full grid grid-cols-3 bg-slate-900 border-b border-slate-800 rounded-none">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -397,25 +397,25 @@ export default function ChartView() {
             </TabsList>
 
             {/* Overview Tab */}
-            <TabsContent value="overview" className="p-4 space-y-4">
+            <TabsContent value="overview" className="p-3 space-y-3">
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
                   COMBINED ANALYSIS
                 </h3>
-                <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-slate-400">Risk Level</span>
-                    <span className="font-semibold">{combinedRisk}</span>
+                <div className="bg-slate-900 border border-slate-800 rounded-lg p-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-slate-400">Risk Level</span>
+                    <span className="text-sm font-semibold">{combinedRisk}</span>
                   </div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-slate-400">Agreement</span>
-                    <span className="font-semibold text-green-400">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-slate-400">Agreement</span>
+                    <span className="text-sm font-semibold text-green-400">
                       {agreement}%
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Action</span>
-                    <span className="font-semibold text-blue-400">
+                    <span className="text-xs text-slate-400">Action</span>
+                    <span className="text-sm font-semibold text-blue-400">
                       {recommendation.action}
                     </span>
                   </div>
@@ -426,26 +426,26 @@ export default function ChartView() {
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
                   PRICE TARGETS
                 </h3>
-                <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-2">
+                <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-2">
                   {recommendation.stopLoss && (
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Stop Loss</span>
-                      <span className="font-semibold text-red-400">
+                      <span className="text-xs text-slate-400">Stop Loss</span>
+                      <span className="text-sm font-semibold text-red-400">
                         ${recommendation.stopLoss.toFixed(2)}
                       </span>
                     </div>
                   )}
                   {recommendation.target && (
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Target</span>
-                      <span className="font-semibold text-green-400">
+                      <span className="text-xs text-slate-400">Target</span>
+                      <span className="text-sm font-semibold text-green-400">
                         ${recommendation.target.toFixed(2)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Current</span>
-                    <span className="font-semibold">
+                    <span className="text-xs text-slate-400">Current</span>
+                    <span className="text-sm font-semibold">
                       ${currentPrice.toFixed(2)}
                     </span>
                   </div>
@@ -456,8 +456,8 @@ export default function ChartView() {
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
                   REASONING
                 </h3>
-                <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
-                  <p className="text-sm text-slate-300 leading-relaxed">
+                <div className="bg-slate-900 border border-slate-800 rounded-lg p-3">
+                  <p className="text-xs text-slate-300 leading-relaxed">
                     {recommendation.reasoning}
                   </p>
                 </div>
@@ -476,7 +476,7 @@ export default function ChartView() {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Long-Form Report (PDF)
+                    Full Report
                   </Button>
                   <Button
                     variant="outline"
@@ -486,7 +486,7 @@ export default function ChartView() {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    Short Summary (PDF)
+                    Summary
                   </Button>
                   <Button
                     variant="outline"
@@ -496,7 +496,7 @@ export default function ChartView() {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                     </svg>
-                    Slideshow (PDF)
+                    Slideshow
                   </Button>
                 </div>
               </div>
