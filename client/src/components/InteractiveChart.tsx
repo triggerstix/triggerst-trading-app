@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, CandlestickData, Time } from 'lightweight-charts';
-import { Pencil, TrendingUp, Trash2 } from 'lucide-react';
+import { Pencil, TrendingUp, Trash2, Minus } from 'lucide-react';
 
 interface ChartData {
   time: string;
@@ -31,7 +31,7 @@ export default function InteractiveChart({
   const candlestickSeriesRef = useRef<any>(null);
   const volumeSeriesRef = useRef<any>(null);
   const [showVolume, setShowVolume] = useState(true);
-  const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci'>('none');
+  const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
   const [drawings, setDrawings] = useState<any[]>([]);
   const [drawingStart, setDrawingStart] = useState<{ time: number; price: number } | null>(null);
 
@@ -168,10 +168,25 @@ export default function InteractiveChart({
 
     // Drawing functionality
     const handleChartClick = (param: any) => {
-      if (drawingMode === 'none' || !param.point || !param.time) return;
+      if (drawingMode === 'none' || !param.point) return;
 
       const price = candlestickSeries.coordinateToPrice(param.point.y);
       const time = param.time;
+
+      // Horizontal line only needs one click
+      if (drawingMode === 'horizontal') {
+        const newDrawing = {
+          type: 'horizontal',
+          price,
+          color: '#fbbf24', // Default yellow/gold color
+        };
+        setDrawings(prev => [...prev, newDrawing]);
+        setDrawingMode('none');
+        return;
+      }
+
+      // Trendline and Fibonacci need two clicks
+      if (!param.time) return;
 
       if (!drawingStart) {
         // First click - start drawing
@@ -211,7 +226,17 @@ export default function InteractiveChart({
     if (!candlestickSeriesRef.current || !chartRef.current) return;
 
     drawings.forEach(drawing => {
-      if (drawing.type === 'trendline') {
+      if (drawing.type === 'horizontal') {
+        // Draw horizontal line
+        candlestickSeriesRef.current.createPriceLine({
+          price: drawing.price,
+          color: drawing.color || '#fbbf24',
+          lineWidth: 2,
+          lineStyle: 0,
+          axisLabelVisible: true,
+          title: 'H-Line',
+        });
+      } else if (drawing.type === 'trendline') {
         // Draw trendline
         const series = (chartRef.current as any).addLineSeries({
           color: '#06b6d4',
@@ -289,6 +314,18 @@ export default function InteractiveChart({
         >
           <TrendingUp className="w-4 h-4" />
           Fibonacci
+        </button>
+        <button
+          onClick={() => setDrawingMode(drawingMode === 'horizontal' ? 'none' : 'horizontal')}
+          className={`px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
+            drawingMode === 'horizontal'
+              ? 'bg-yellow-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+          title="Draw Horizontal Line"
+        >
+          <Minus className="w-4 h-4" />
+          H-Line
         </button>
         {drawings.length > 0 && (
           <button

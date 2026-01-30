@@ -309,3 +309,11 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 - [x] Store drawings in component state
 - [x] Test drawing tools on chart (all 34 tests passing)
 - [ ] Save checkpoint: "Drawing tools complete"
+
+
+## Phase 23: Horizontal Line Tool
+- [x] Add horizontal line button to drawing toolbar
+- [x] Implement single-click horizontal line placement
+- [x] Default yellow/gold color for horizontal lines
+- [x] Test horizontal line tool (all 34 tests passing)
+- [ ] Save checkpoint: "Horizontal line tool complete"
