@@ -13,6 +13,13 @@ import {
   generateSlideshow,
   type StockInfo 
 } from "../services/pdfExport";
+import { exec } from "child_process";
+import { promisify } from "util";
+import { writeFile, readFile, unlink } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
+
+const execAsync = promisify(exec);
 
 export const exportRouter = router({
   /**
@@ -47,7 +54,7 @@ export const exportRouter = router({
       // Generate report
       const stockInfo: StockInfo = {
         symbol: chartData.symbol,
-        name: chartData.symbol, // Use symbol as name for now
+        name: chartData.symbol,
         currentPrice,
         high52Week: chartData.meta.fiftyTwoWeekHigh || currentPrice,
         low52Week: chartData.meta.fiftyTwoWeekLow || currentPrice,
@@ -55,11 +62,44 @@ export const exportRouter = router({
       
       const markdown = generateLongFormReport(stockInfo, analysis);
       
-      return {
-        format: "markdown" as const,
-        content: markdown,
-        filename: `${symbol}_Triggerstix_Report_${new Date().toISOString().split('T')[0]}.md`,
-      };
+      // Convert markdown to PDF using manus-md-to-pdf utility
+      const timestamp = Date.now();
+      const mdPath = join(tmpdir(), `${symbol}_report_${timestamp}.md`);
+      const pdfPath = join(tmpdir(), `${symbol}_report_${timestamp}.pdf`);
+      
+      try {
+        // Write markdown to temp file
+        await writeFile(mdPath, markdown, 'utf-8');
+        console.log(`[Export] Wrote markdown to ${mdPath}`);
+        
+        // Convert to PDF
+        const { stdout, stderr } = await execAsync(`manus-md-to-pdf "${mdPath}" "${pdfPath}"`);
+        console.log(`[Export] PDF conversion output:`, stdout);
+        if (stderr) console.error(`[Export] PDF conversion errors:`, stderr);
+        
+        // Read PDF as base64
+        const pdfBuffer = await readFile(pdfPath);
+        console.log(`[Export] PDF size: ${pdfBuffer.length} bytes`);
+        const pdfBase64 = pdfBuffer.toString('base64');
+        
+        // Cleanup temp files
+        await unlink(mdPath);
+        await unlink(pdfPath);
+        
+        return {
+          format: "pdf" as const,
+          content: pdfBase64,
+          filename: `${symbol}_Triggerstix_Report_${new Date().toISOString().split('T')[0]}.pdf`,
+        };
+      } catch (error) {
+        // Cleanup on error
+        console.error(`[Export] PDF generation failed:`, error);
+        try {
+          await unlink(mdPath);
+          await unlink(pdfPath);
+        } catch {}
+        throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }),
   
   /**
@@ -92,7 +132,7 @@ export const exportRouter = router({
       
       const stockInfo: StockInfo = {
         symbol: chartData.symbol,
-        name: chartData.symbol, // Use symbol as name for now
+        name: chartData.symbol,
         currentPrice,
         high52Week: chartData.meta.fiftyTwoWeekHigh || currentPrice,
         low52Week: chartData.meta.fiftyTwoWeekLow || currentPrice,
@@ -100,11 +140,32 @@ export const exportRouter = router({
       
       const summary = generateShortFormSummary(stockInfo, analysis);
       
-      return {
-        format: "text" as const,
-        content: summary,
-        filename: `${symbol}_Summary_${new Date().toISOString().split('T')[0]}.txt`,
-      };
+      // Convert to markdown then PDF
+      const markdown = `# ${symbol} - Quick Summary\n\n${summary}`;
+      const timestamp = Date.now();
+      const mdPath = join(tmpdir(), `${symbol}_summary_${timestamp}.md`);
+      const pdfPath = join(tmpdir(), `${symbol}_summary_${timestamp}.pdf`);
+      
+      try {
+        await writeFile(mdPath, markdown, 'utf-8');
+        await execAsync(`manus-md-to-pdf ${mdPath} ${pdfPath}`);
+        const pdfBuffer = await readFile(pdfPath);
+        const pdfBase64 = pdfBuffer.toString('base64');
+        await unlink(mdPath);
+        await unlink(pdfPath);
+        
+        return {
+          format: "pdf" as const,
+          content: pdfBase64,
+          filename: `${symbol}_Summary_${new Date().toISOString().split('T')[0]}.pdf`,
+        };
+      } catch (error) {
+        try {
+          await unlink(mdPath);
+          await unlink(pdfPath);
+        } catch {}
+        throw new Error(`PDF generation failed: ${error}`);
+      }
     }),
   
   /**
@@ -145,6 +206,7 @@ export const exportRouter = router({
       
       const html = generateSlideshow(stockInfo, analysis);
       
+      // For slideshow, return HTML directly (user can print to PDF from browser)
       return {
         format: "html" as const,
         content: html,

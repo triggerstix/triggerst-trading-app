@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star, Maximize2 } from "lucide-react";
 import InteractiveChart from "@/components/InteractiveChart";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -117,23 +117,35 @@ export default function ChartView() {
     try {
       toast.info(`Generating ${format === 'longForm' ? 'long-form report' : format === 'shortForm' ? 'short summary' : 'slideshow'}...`);
       
-      // Fetch export data
+      // Fetch export data using tRPC client
       const fetchExport = async () => {
         if (format === 'longForm') {
-          return await utils.client.export.longForm.query({ symbol });
+          return await utils.client.export.longForm.query({ symbol: symbol || "" });
         } else if (format === 'shortForm') {
-          return await utils.client.export.shortForm.query({ symbol });
+          return await utils.client.export.shortForm.query({ symbol: symbol || "" });
         } else {
-          return await utils.client.export.slideshow.query({ symbol });
+          return await utils.client.export.slideshow.query({ symbol: symbol || "" });
         }
       };
       
-      const result = await fetchExport();
+      const result = await fetchExport() as { format: 'pdf' | 'html' | 'text'; content: string; filename: string };
       
       // Create download
-      const blob = new Blob([result.content], { 
-        type: result.format === 'html' ? 'text/html' : 'text/plain' 
-      });
+      let blob: Blob;
+      if (result.format === 'pdf') {
+        // Decode base64 PDF
+        const binaryString = atob(result.content);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: 'application/pdf' });
+      } else if (result.format === 'html') {
+        blob = new Blob([result.content], { type: 'text/html' });
+      } else {
+        blob = new Blob([result.content], { type: 'text/plain' });
+      }
+      
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -293,6 +305,17 @@ export default function ChartView() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Chart-Only Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation(`/chart-only/${symbol}`)}
+              className="flex items-center gap-2"
+            >
+              <Maximize2 className="w-4 h-4" />
+              Full Screen
+            </Button>
+
             {/* Watchlist Button */}
             <Button
               variant="outline"

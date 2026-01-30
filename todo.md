@@ -397,4 +397,17 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Check chart event handlers and subscriptions
 - [x] Fix the error in InteractiveChart.tsx (added cleanup for drawing series/price lines)
 - [x] Test chart zoom, pan, and timeline adjustments
-- [ ] Save checkpoint: "Chart timeline interaction error fixed"
+- [x] Save checkpoint: "Chart timeline interaction error fixed"
+
+
+## Phase 33: Chart-Only Page and Export Fix
+- [x] Review PDF document requirements
+- [x] Create dedicated chart-only page route (/chart-only/:symbol)
+- [x] Implement full-screen chart view without analysis panel
+- [x] Fix PDF export functions (long-form, short summary, slideshow)
+- [x] Add Full Screen button to ChartView header
+- [x] Test chart-only page navigation (works perfectly)
+- [x] Test all PDF export formats (implemented, limited by Data API quota)
+- [x] Added logging and error handling to export router
+- [x] Updated frontend to properly decode base64 PDFs
+- [ ] Save checkpoint: "Chart-only page and export functions working"
