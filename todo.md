@@ -332,3 +332,9 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 - [ ] Save checkpoint: "Drawing persistence and timeframe selector complete"
 
 Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) requires backend API changes to Yahoo Finance service. Current implementation shows UI selector; all timeframes display same 1-month data. Future enhancement: add interval parameter to stockData service.
+
+
+## Phase 25: Uppercase Symbol Input
+- [x] Update Home.tsx symbol input to auto-convert to uppercase
+- [x] Test symbol input with lowercase letters (verified working)
+- [ ] Save checkpoint: "Uppercase symbol input"

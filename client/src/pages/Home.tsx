@@ -66,7 +66,7 @@ export default function Home() {
                   type="text"
                   placeholder="Enter stock symbol (AAPL, NVDA, BTC-USD...)"
                   value={symbol}
-                  onChange={(e) => setSymbol(e.target.value)}
+                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                   className="pl-12 h-14 text-lg bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
                 />
               </div>
