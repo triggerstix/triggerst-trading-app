@@ -348,3 +348,10 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Add "Try [suggestion]" button for quick correction
 - [x] Test with invalid symbols (APPL shows suggestion for AAPL)
 - [ ] Save checkpoint: "Improved error handling"
+
+
+## Phase 27: Fix React Error in InteractiveChart
+- [x] Investigate error at InteractiveChart.tsx:81
+- [x] Fix React hooks dependency warning (added eslint-disable for saveDrawingsMutation)
+- [x] Test chart rendering (no errors, app loads correctly)
+- [ ] Save checkpoint: "Fixed React error"

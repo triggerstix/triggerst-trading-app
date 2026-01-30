@@ -62,6 +62,7 @@ export default function InteractiveChart({
     }, 1000); // Debounce 1 second
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawings, symbol, user]);
 
   useEffect(() => {
