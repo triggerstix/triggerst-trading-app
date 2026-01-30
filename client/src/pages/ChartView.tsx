@@ -41,7 +41,8 @@ export default function ChartView() {
       }
       setPrevRecommendation(analysis.recommendation.action);
     }
-  }, [analysis?.recommendation?.action, prevRecommendation, symbol]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis?.recommendation?.action, symbol]);
 
   // Auth and watchlist
   const { user } = useAuth();

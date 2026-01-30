@@ -355,3 +355,11 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Fix React hooks dependency warning (added eslint-disable for saveDrawingsMutation)
 - [x] Test chart rendering (no errors, app loads correctly)
 - [ ] Save checkpoint: "Fixed React error"
+
+
+## Phase 28: Fix Infinite Loop Error
+- [x] Investigate recursivelyTraversePassiveMountEffects error
+- [x] Check all useEffect dependencies in ChartView and InteractiveChart
+- [x] Fix infinite re-render loop (removed prevRecommendation from dependencies)
+- [x] Test app stability (app loads without errors, no infinite loop)
+- [ ] Save checkpoint: "Fixed infinite loop"
