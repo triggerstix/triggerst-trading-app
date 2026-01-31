@@ -475,3 +475,12 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [ ] Embed candlestick chart as image in PDF
 - [ ] Test with multiple tickers
 - [ ] Save checkpoint
+
+
+## Phase 40: EMA Indicators
+- [x] Add EMA calculation function (12-day and 26-day)
+- [x] Add EMA12 and EMA26 toggle buttons to chart toolbar
+- [x] Render EMA lines on the candlestick chart
+- [x] Use distinct colors for EMA lines (cyan for EMA12, pink for EMA26)
+- [x] Test with AAPL - working correctly
+- [ ] Save checkpoint

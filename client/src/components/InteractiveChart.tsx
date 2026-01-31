@@ -59,6 +59,12 @@ export default function InteractiveChart({
   const sma50SeriesRef = useRef<any>(null);
   const sma200SeriesRef = useRef<any>(null);
   
+  // EMA overlay states
+  const [showEMA12, setShowEMA12] = useState(false);
+  const [showEMA26, setShowEMA26] = useState(false);
+  const ema12SeriesRef = useRef<any>(null);
+  const ema26SeriesRef = useRef<any>(null);
+  
   // RSI and MACD indicator states
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
@@ -241,6 +247,63 @@ export default function InteractiveChart({
       sma200Series.setData(calculateSMA(200));
     }
     sma200Series.applyOptions({ visible: showSMA200 });
+
+    // Calculate EMA helper function
+    const calculateEMA = (period: number) => {
+      const emaData: { time: Time; value: number }[] = [];
+      const multiplier = 2 / (period + 1);
+      let ema = 0;
+      
+      for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) {
+          // Not enough data yet, skip
+          continue;
+        } else if (i === period - 1) {
+          // First EMA is SMA
+          let sum = 0;
+          for (let j = 0; j < period; j++) {
+            sum += data[i - j].close;
+          }
+          ema = sum / period;
+        } else {
+          // EMA = (Close - Previous EMA) * multiplier + Previous EMA
+          ema = (data[i].close - ema) * multiplier + ema;
+        }
+        emaData.push({
+          time: data[i].time as Time,
+          value: ema,
+        });
+      }
+      return emaData;
+    };
+
+    // Add EMA series
+    
+    // EMA 12 (cyan/teal)
+    const ema12Series = chart.addSeries(LineSeries, {
+      color: '#06b6d4',
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    ema12SeriesRef.current = ema12Series;
+    if (data.length >= 12) {
+      ema12Series.setData(calculateEMA(12));
+    }
+    ema12Series.applyOptions({ visible: showEMA12 });
+
+    // EMA 26 (pink/magenta)
+    const ema26Series = chart.addSeries(LineSeries, {
+      color: '#ec4899',
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    ema26SeriesRef.current = ema26Series;
+    if (data.length >= 26) {
+      ema26Series.setData(calculateEMA(26));
+    }
+    ema26Series.applyOptions({ visible: showEMA26 });
 
     // Add support/resistance lines
     supportLevels.forEach(level => {
@@ -654,7 +717,7 @@ export default function InteractiveChart({
               </button>
             ))}
           </div>
-          {/* SMA indicators */}
+          {/* SMA and EMA indicators */}
           <div className="flex gap-1">
             <button
               onClick={() => {
@@ -691,6 +754,31 @@ export default function InteractiveChart({
               title="200-period SMA"
             >
               MA200
+            </button>
+            <span className="border-l border-slate-600 mx-1"></span>
+            <button
+              onClick={() => {
+                setShowEMA12(!showEMA12);
+                ema12SeriesRef.current?.applyOptions({ visible: !showEMA12 });
+              }}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                showEMA12 ? 'bg-cyan-500 text-black' : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
+              }`}
+              title="12-period EMA"
+            >
+              EMA12
+            </button>
+            <button
+              onClick={() => {
+                setShowEMA26(!showEMA26);
+                ema26SeriesRef.current?.applyOptions({ visible: !showEMA26 });
+              }}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                showEMA26 ? 'bg-pink-500 text-white' : 'bg-slate-800/80 text-slate-400 hover:bg-slate-700'
+              }`}
+              title="26-period EMA"
+            >
+              EMA26
             </button>
           </div>
         </div>
