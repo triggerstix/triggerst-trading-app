@@ -575,7 +575,7 @@ export default function ChartView() {
                   </svg>
                   <span className="text-orange-400">Download Analysis</span>
                 </Button>
-                <p className="text-xs text-slate-500 mt-2">9-page Investment Analysis PDF</p>
+                <p className="text-xs text-slate-500 mt-2">5-page Investment Analysis PDF</p>
               </div>
             </TabsContent>
 
