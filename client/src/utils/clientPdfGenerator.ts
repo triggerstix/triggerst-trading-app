@@ -1,10 +1,9 @@
 /**
- * Client-side PDF Generator
- * Uses html2pdf.js to render HTML/CSS to PDF in the browser
- * Produces high-quality PDFs matching the HON Investment Analysis style
+ * Client-side PDF Generator using jsPDF
+ * Generates professional Investment Analysis PDFs without html2canvas
  */
 
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
 
 interface AnalysisData {
   symbol: string;
@@ -45,6 +44,14 @@ interface AnalysisData {
   tradingDays?: number;
 }
 
+// Colors
+const NAVY = [26, 43, 109] as const;
+const ORANGE = [230, 126, 34] as const;
+const GREEN = [39, 174, 96] as const;
+const RED = [231, 76, 60] as const;
+const GRAY = [74, 85, 104] as const;
+const LIGHT_BG = [232, 236, 241] as const;
+
 export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
   const {
     symbol,
@@ -60,7 +67,6 @@ export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
     companyProfile,
     peakPrice = currentPrice,
     startPrice = currentPrice,
-    tradingDays = 252,
   } = data;
 
   const dateStr = new Date().toLocaleDateString('en-US', { 
@@ -72,687 +78,621 @@ export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
   const targetPrice = recommendation.target || (currentPrice * 1.15);
   const stopLoss = recommendation.stopLoss || (startPrice * 0.85);
   const sustainablePrice = gann.rallyAngle.sustainablePrice;
-  const supportLevels = gann.squareOfNineLevels.filter(l => l.type === 'support').slice(0, 2);
-  const resistanceLevels = gann.squareOfNineLevels.filter(l => l.type === 'resistance').slice(0, 2);
+  const supportLevels = gann.squareOfNineLevels.filter(l => l.type === 'support').slice(0, 3);
+  const resistanceLevels = gann.squareOfNineLevels.filter(l => l.type === 'resistance').slice(0, 3);
   const upside = ((targetPrice - currentPrice) / currentPrice * 100).toFixed(0);
   const downside = ((currentPrice - stopLoss) / currentPrice * 100).toFixed(0);
   const riskReward = ((targetPrice - currentPrice) / (currentPrice - stopLoss)).toFixed(2);
   
-  const actionColor = recommendation.action === 'BUY' ? '#27ae60' : 
-                      recommendation.action === 'SELL' ? '#e74c3c' : '#f39c12';
+  const displayName = companyName || companyProfile?.longName || symbol;
+  const sector = companyProfile?.sector || 'N/A';
+  const industry = companyProfile?.industry || 'N/A';
+  const businessSummary = companyProfile?.longBusinessSummary || 'Company information not available.';
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @page { size: 11in 8.5in landscape; margin: 0; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
-      font-family: Arial, Helvetica, sans-serif;
-      background: #e8ecf1;
-      color: #1a2b6d;
-      line-height: 1.4;
-    }
-    .page {
-      width: 11in;
-      height: 8.5in;
-      padding: 0.5in;
-      page-break-after: always;
-      position: relative;
-      background: #e8ecf1;
-      background-image: 
-        linear-gradient(rgba(180,190,200,0.3) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(180,190,200,0.3) 1px, transparent 1px);
-      background-size: 20px 20px;
-    }
-    .page:last-child { page-break-after: avoid; }
-    
-    .corner-tl, .corner-tr, .corner-bl, .corner-br {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      border-color: #1a2b6d;
-      border-style: solid;
-      border-width: 0;
-    }
-    .corner-tl { top: 0.3in; left: 0.3in; border-top-width: 3px; border-left-width: 3px; }
-    .corner-tr { top: 0.3in; right: 0.3in; border-top-width: 3px; border-right-width: 3px; }
-    .corner-bl { bottom: 0.3in; left: 0.3in; border-bottom-width: 3px; border-left-width: 3px; }
-    .corner-br { bottom: 0.3in; right: 0.3in; border-bottom-width: 3px; border-right-width: 3px; }
-    
-    .page-title {
-      font-size: 28px;
-      font-weight: bold;
-      text-align: center;
-      color: #1a2b6d;
-      margin-bottom: 30px;
-    }
-    
-    .subtitle {
-      font-size: 14px;
-      text-align: center;
-      color: #1a2b6d;
-      letter-spacing: 2px;
-      margin-bottom: 20px;
-    }
-    
-    .big-symbol {
-      font-size: 72px;
-      font-weight: bold;
-      text-align: center;
-      color: #1a2b6d;
-      margin: 40px 0 20px;
-    }
-    
-    .company-name {
-      font-size: 24px;
-      text-align: center;
-      color: #1a2b6d;
-      margin-bottom: 20px;
-    }
-    
-    .date {
-      font-size: 16px;
-      text-align: center;
-      color: #4a5568;
-      margin-bottom: 40px;
-    }
-    
-    .price-box {
-      width: 200px;
-      margin: 0 auto;
-      background: #1a2b6d;
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-    }
-    
-    .price-box .price {
-      font-size: 36px;
-      font-weight: bold;
-      color: white;
-    }
-    
-    .action-badge {
-      display: inline-block;
-      padding: 15px 50px;
-      border-radius: 8px;
-      font-size: 32px;
-      font-weight: bold;
-      color: white;
-      margin: 20px auto;
-    }
-    
-    .metrics-row {
-      display: flex;
-      justify-content: space-around;
-      margin: 30px 0;
-    }
-    
-    .metric {
-      text-align: center;
-    }
-    
-    .metric-label {
-      font-size: 14px;
-      color: #4a5568;
-      margin-bottom: 8px;
-    }
-    
-    .metric-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #1a2b6d;
-    }
-    
-    .metric-value.green { color: #27ae60; }
-    .metric-value.orange { color: #e67e22; }
-    .metric-value.red { color: #e74c3c; }
-    
-    .section-title {
-      font-size: 18px;
-      font-weight: bold;
-      color: #1a2b6d;
-      margin: 25px 0 15px;
-      border-bottom: 2px solid #e67e22;
-      padding-bottom: 5px;
-    }
-    
-    .two-column {
-      display: flex;
-      gap: 40px;
-    }
-    
-    .column {
-      flex: 1;
-    }
-    
-    .data-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(26, 43, 109, 0.1);
-    }
-    
-    .data-label {
-      color: #4a5568;
-    }
-    
-    .data-value {
-      font-weight: bold;
-      color: #1a2b6d;
-    }
-    
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
-    
-    .table th {
-      background: #1a2b6d;
-      color: white;
-      padding: 12px;
-      text-align: left;
-      font-size: 14px;
-    }
-    
-    .table td {
-      padding: 12px;
-      border-bottom: 1px solid rgba(26, 43, 109, 0.1);
-    }
-    
-    .table tr:nth-child(even) {
-      background: rgba(26, 43, 109, 0.03);
-    }
-    
-    .box-row {
-      display: flex;
-      gap: 20px;
-      margin: 30px 0;
-    }
-    
-    .info-box {
-      flex: 1;
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-    }
-    
-    .info-box.green { background: #27ae60; color: white; }
-    .info-box.orange { background: #e67e22; color: white; }
-    .info-box.red { background: #e74c3c; color: white; }
-    
-    .info-box .box-title {
-      font-size: 14px;
-      margin-bottom: 10px;
-      opacity: 0.9;
-    }
-    
-    .info-box .box-value {
-      font-size: 28px;
-      font-weight: bold;
-    }
-    
-    .info-box .box-subtitle {
-      font-size: 12px;
-      margin-top: 5px;
-      opacity: 0.8;
-    }
-    
-    .case-box {
-      flex: 1;
-      padding: 20px;
-      border-radius: 8px;
-      color: white;
-    }
-    
-    .case-box.bull { background: #27ae60; }
-    .case-box.bear { background: #e74c3c; }
-    
-    .case-box h3 {
-      font-size: 18px;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    
-    .case-box ul {
-      list-style: none;
-      padding: 0;
-    }
-    
-    .case-box li {
-      padding: 8px 0;
-      font-size: 13px;
-    }
-    
-    .case-box li:before {
-      content: "• ";
-    }
-    
-    .agreement-big {
-      font-size: 64px;
-      font-weight: bold;
-      color: #27ae60;
-      text-align: center;
-      margin: 30px 0 10px;
-    }
-    
-    .agreement-label {
-      font-size: 18px;
-      text-align: center;
-      color: #1a2b6d;
-    }
-    
-    .description {
-      font-size: 12px;
-      line-height: 1.6;
-      color: #4a5568;
-      text-align: justify;
-    }
-    
-    .footer {
-      position: absolute;
-      bottom: 0.4in;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-size: 10px;
-      color: #4a5568;
-    }
-    
-    .disclaimer {
-      font-size: 9px;
-      line-height: 1.5;
-      color: #666;
-      text-align: justify;
-      margin-top: 20px;
-      padding: 15px;
-      background: rgba(26, 43, 109, 0.05);
-      border-radius: 5px;
-    }
-  </style>
-</head>
-<body>
+  // Create PDF in landscape mode
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'pt',
+    format: 'letter'
+  });
 
-<!-- PAGE 1: Title -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
-  
-  <div class="subtitle">TRIGGERSTIX DUAL-METHOD ANALYSIS</div>
-  <div class="big-symbol">${symbol}</div>
-  <div class="company-name">${companyName || companyProfile?.longName || symbol}</div>
-  <div class="date">${dateStr}</div>
-  <div class="price-box">
-    <div class="price">$${currentPrice.toFixed(2)}</div>
-  </div>
-  <div class="footer">Investment Analysis Report</div>
-</div>
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 40;
 
-<!-- PAGE 2: Executive Summary -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
-  
-  <div class="page-title">EXECUTIVE SUMMARY</div>
-  
-  <div style="text-align: center;">
-    <div class="action-badge" style="background: ${actionColor};">${recommendation.action}</div>
-  </div>
-  
-  <div class="metrics-row">
-    <div class="metric">
-      <div class="metric-label">Current Price</div>
-      <div class="metric-value">$${currentPrice.toFixed(2)}</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Risk Level</div>
-      <div class="metric-value ${combinedRisk === 'LOW' ? 'green' : combinedRisk === 'HIGH' || combinedRisk === 'EXTREME' ? 'red' : 'orange'}">${combinedRisk}</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Agreement</div>
-      <div class="metric-value green">${agreement}%</div>
-    </div>
-  </div>
-  
-  <div class="section-title">PRICE TARGETS</div>
-  <div class="two-column">
-    <div class="column">
-      <div class="data-row">
-        <span class="data-label">Target Price</span>
-        <span class="data-value" style="color: #27ae60;">$${targetPrice.toFixed(2)}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Stop Loss</span>
-        <span class="data-value" style="color: #e74c3c;">$${stopLoss.toFixed(2)}</span>
-      </div>
-    </div>
-    <div class="column">
-      <div class="data-row">
-        <span class="data-label">Sustainable Price</span>
-        <span class="data-value">$${sustainablePrice.toFixed(2)}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Risk/Reward</span>
-        <span class="data-value">${riskReward}:1</span>
-      </div>
-    </div>
-  </div>
-  
-  <div class="section-title">ANALYSIS REASONING</div>
-  <p class="description">${recommendation.reasoning}</p>
-</div>
+  // Helper functions
+  const drawBackground = () => {
+    doc.setFillColor(...LIGHT_BG);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    
+    // Draw grid pattern
+    doc.setDrawColor(180, 190, 200);
+    doc.setLineWidth(0.3);
+    for (let x = 0; x < pageWidth; x += 20) {
+      doc.line(x, 0, x, pageHeight);
+    }
+    for (let y = 0; y < pageHeight; y += 20) {
+      doc.line(0, y, pageWidth, y);
+    }
+  };
 
-<!-- PAGE 3: Price Sustainability Analysis -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
-  
-  <div class="page-title">PRICE SUSTAINABILITY ANALYSIS</div>
-  
-  <div class="two-column">
-    <div class="column">
-      <div class="section-title">1x4 RALLY ANGLE</div>
-      <div class="data-row">
-        <span class="data-label">Start Price</span>
-        <span class="data-value">$${startPrice.toFixed(2)}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Peak Price</span>
-        <span class="data-value">$${peakPrice.toFixed(2)}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Trading Days</span>
-        <span class="data-value">${tradingDays}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Sustainable Price</span>
-        <span class="data-value" style="color: #e67e22;">$${sustainablePrice.toFixed(2)}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Signal</span>
-        <span class="data-value" style="color: ${gann.rallyAngle.signal === 'BUY' ? '#27ae60' : '#e74c3c'};">${gann.rallyAngle.signal}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Risk Level</span>
-        <span class="data-value">${gann.rallyAngle.riskLevel}</span>
-      </div>
-    </div>
-    <div class="column">
-      <div class="section-title">PRICE LEVELS</div>
-      <table class="table">
-        <tr><th>Type</th><th>Level</th></tr>
-        ${supportLevels.map((l, i) => `<tr><td>Support ${i + 1}</td><td style="color: #27ae60;">$${l.level.toFixed(2)}</td></tr>`).join('')}
-        ${resistanceLevels.map((l, i) => `<tr><td>Resistance ${i + 1}</td><td style="color: #e74c3c;">$${l.level.toFixed(2)}</td></tr>`).join('')}
-      </table>
-    </div>
-  </div>
-</div>
+  const drawCorners = () => {
+    doc.setDrawColor(...NAVY);
+    doc.setLineWidth(3);
+    const cornerSize = 25;
+    // Top-left
+    doc.line(margin - 10, margin - 10, margin - 10 + cornerSize, margin - 10);
+    doc.line(margin - 10, margin - 10, margin - 10, margin - 10 + cornerSize);
+    // Top-right
+    doc.line(pageWidth - margin + 10 - cornerSize, margin - 10, pageWidth - margin + 10, margin - 10);
+    doc.line(pageWidth - margin + 10, margin - 10, pageWidth - margin + 10, margin - 10 + cornerSize);
+    // Bottom-left
+    doc.line(margin - 10, pageHeight - margin + 10, margin - 10 + cornerSize, pageHeight - margin + 10);
+    doc.line(margin - 10, pageHeight - margin + 10 - cornerSize, margin - 10, pageHeight - margin + 10);
+    // Bottom-right
+    doc.line(pageWidth - margin + 10 - cornerSize, pageHeight - margin + 10, pageWidth - margin + 10, pageHeight - margin + 10);
+    doc.line(pageWidth - margin + 10, pageHeight - margin + 10 - cornerSize, pageWidth - margin + 10, pageHeight - margin + 10);
+  };
 
-<!-- PAGE 4: Market Phase Analysis -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
-  
-  <div class="page-title">INSTITUTIONAL ACTIVITY TRACKING</div>
-  
-  <div class="section-title">MARKET PHASE ANALYSIS</div>
-  <div class="two-column">
-    <div class="column">
-      <div class="data-row">
-        <span class="data-label">Current Phase</span>
-        <span class="data-value" style="color: #e67e22;">${ney.phase}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Signal</span>
-        <span class="data-value" style="color: ${ney.signal === 'BUY' ? '#27ae60' : ney.signal === 'SELL' ? '#e74c3c' : '#f39c12'};">${ney.signal}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Confidence</span>
-        <span class="data-value">${ney.confidence}%</span>
-      </div>
-    </div>
-    <div class="column">
-      <div class="section-title">PHASE INTERPRETATION</div>
-      <p class="description">${getPhaseDescription(ney.phase)}</p>
-    </div>
-  </div>
-</div>
+  const drawFooter = (text: string) => {
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    doc.text(text, pageWidth / 2, pageHeight - 20, { align: 'center' });
+  };
 
-<!-- PAGE 5: Agreement Analysis -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
-  
-  <div class="page-title">DUAL-METHOD AGREEMENT</div>
-  
-  <table class="table">
-    <tr>
-      <th>METHOD</th>
-      <th>SIGNAL</th>
-      <th>RISK</th>
-      <th>CONFIDENCE</th>
-    </tr>
-    <tr>
-      <td>Price Analysis</td>
-      <td style="color: ${gann.rallyAngle.signal === 'BUY' ? '#27ae60' : '#e74c3c'};">${gann.rallyAngle.signal}</td>
-      <td>${gann.rallyAngle.riskLevel}</td>
-      <td>—</td>
-    </tr>
-    <tr>
-      <td>Market Phase</td>
-      <td style="color: ${ney.signal === 'BUY' ? '#27ae60' : ney.signal === 'SELL' ? '#e74c3c' : '#f39c12'};">${ney.signal}</td>
-      <td>—</td>
-      <td>${ney.confidence}%</td>
-    </tr>
-  </table>
-  
-  <div class="agreement-big">${agreement}%</div>
-  <div class="agreement-label">METHOD AGREEMENT</div>
-</div>
+  const getActionColor = (action: string): readonly [number, number, number] => {
+    if (action === 'BUY') return GREEN;
+    if (action === 'SELL') return RED;
+    return ORANGE;
+  };
 
-<!-- PAGE 6: Company Profile -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
+  // PAGE 1: Title Page
+  drawBackground();
+  drawCorners();
   
-  <div class="page-title">COMPANY PROFILE</div>
+  doc.setFontSize(12);
+  doc.setTextColor(...NAVY);
+  doc.text('TRIGGERSTIX DUAL-METHOD ANALYSIS', pageWidth / 2, 80, { align: 'center' });
   
-  <div style="text-align: center; margin-bottom: 20px;">
-    <div style="font-size: 24px; font-weight: bold; color: #1a2b6d;">${companyName || companyProfile?.longName || symbol}</div>
-  </div>
+  doc.setFontSize(72);
+  doc.setFont('helvetica', 'bold');
+  doc.text(symbol, pageWidth / 2, 200, { align: 'center' });
   
-  <div class="two-column">
-    <div class="column">
-      <div class="data-row">
-        <span class="data-label">Sector</span>
-        <span class="data-value">${companyProfile?.sector || 'N/A'}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Industry</span>
-        <span class="data-value">${companyProfile?.industry || 'N/A'}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">52-Week High</span>
-        <span class="data-value">$${high52Week.toFixed(2)}</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">52-Week Low</span>
-        <span class="data-value">$${low52Week.toFixed(2)}</span>
-      </div>
-    </div>
-    <div class="column">
-      <div class="section-title">BUSINESS DESCRIPTION</div>
-      <p class="description">${companyProfile?.longBusinessSummary?.substring(0, 800) || 'Company description not available.'}${(companyProfile?.longBusinessSummary?.length || 0) > 800 ? '...' : ''}</p>
-    </div>
-  </div>
-</div>
+  doc.setFontSize(24);
+  doc.setFont('helvetica', 'normal');
+  doc.text(displayName, pageWidth / 2, 250, { align: 'center' });
+  
+  doc.setFontSize(14);
+  doc.setTextColor(...GRAY);
+  doc.text(dateStr, pageWidth / 2, 290, { align: 'center' });
+  
+  // Price box
+  doc.setFillColor(...NAVY);
+  doc.roundedRect(pageWidth / 2 - 80, 330, 160, 60, 5, 5, 'F');
+  doc.setFontSize(28);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`$${currentPrice.toFixed(2)}`, pageWidth / 2, 370, { align: 'center' });
+  
+  drawFooter('Investment Analysis Report');
 
-<!-- PAGE 7: Trading Parameters -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
+  // PAGE 2: Executive Summary
+  doc.addPage();
+  drawBackground();
+  drawCorners();
   
-  <div class="page-title">TRADING PARAMETERS</div>
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EXECUTIVE SUMMARY', pageWidth / 2, 70, { align: 'center' });
   
-  <div class="box-row">
-    <div class="info-box green">
-      <div class="box-title">ENTRY ZONE</div>
-      <div class="box-value">$${(sustainablePrice * 0.95).toFixed(2)}</div>
-      <div class="box-subtitle">to $${sustainablePrice.toFixed(2)}</div>
-    </div>
-    <div class="info-box orange">
-      <div class="box-title">TARGET PRICE</div>
-      <div class="box-value">$${targetPrice.toFixed(2)}</div>
-      <div class="box-subtitle">+${upside}% upside</div>
-    </div>
-    <div class="info-box red">
-      <div class="box-title">STOP LOSS</div>
-      <div class="box-value">$${stopLoss.toFixed(2)}</div>
-      <div class="box-subtitle">-${downside}% risk</div>
-    </div>
-  </div>
+  // Action badge
+  const actionColor = getActionColor(recommendation.action);
+  doc.setFillColor(actionColor[0], actionColor[1], actionColor[2]);
+  doc.roundedRect(pageWidth / 2 - 70, 100, 140, 50, 5, 5, 'F');
+  doc.setFontSize(28);
+  doc.setTextColor(255, 255, 255);
+  doc.text(recommendation.action, pageWidth / 2, 135, { align: 'center' });
   
-  <div class="section-title">RISK/REWARD ANALYSIS</div>
-  <div class="two-column">
-    <div class="column">
-      <div class="data-row">
-        <span class="data-label">Risk/Reward Ratio</span>
-        <span class="data-value">${riskReward}:1</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Potential Upside</span>
-        <span class="data-value" style="color: #27ae60;">+${upside}%</span>
-      </div>
-    </div>
-    <div class="column">
-      <div class="data-row">
-        <span class="data-label">Potential Downside</span>
-        <span class="data-value" style="color: #e74c3c;">-${downside}%</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">Current vs Sustainable</span>
-        <span class="data-value">${currentPrice < sustainablePrice ? 'Below' : 'Above'}</span>
-      </div>
-    </div>
-  </div>
-</div>
+  // Key metrics row
+  const metricsY = 190;
+  const metricSpacing = 180;
+  const metrics = [
+    { label: 'Risk Level', value: combinedRisk, color: combinedRisk === 'LOW' ? GREEN : combinedRisk === 'HIGH' ? RED : ORANGE },
+    { label: 'Agreement', value: `${agreement}%`, color: agreement >= 80 ? GREEN : ORANGE },
+    { label: 'Upside', value: `+${upside}%`, color: GREEN },
+    { label: 'Downside', value: `-${downside}%`, color: RED },
+    { label: 'Risk/Reward', value: `${riskReward}:1`, color: parseFloat(riskReward) >= 2 ? GREEN : ORANGE },
+  ];
+  
+  metrics.forEach((m, i) => {
+    const x = margin + 80 + i * metricSpacing;
+    doc.setFontSize(11);
+    doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+    doc.text(m.label, x, metricsY, { align: 'center' });
+    doc.setFontSize(22);
+    doc.setTextColor(m.color[0], m.color[1], m.color[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text(m.value, x, metricsY + 25, { align: 'center' });
+  });
+  
+  // Price targets section
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.text('PRICE TARGETS', margin, 280);
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(2);
+  doc.line(margin, 285, margin + 120, 285);
+  
+  const targetsY = 310;
+  const targetData = [
+    { label: 'Current Price', value: `$${currentPrice.toFixed(2)}`, color: NAVY },
+    { label: 'Target Price', value: `$${targetPrice.toFixed(2)}`, color: GREEN },
+    { label: 'Stop Loss', value: `$${stopLoss.toFixed(2)}`, color: RED },
+    { label: 'Sustainable', value: `$${sustainablePrice.toFixed(2)}`, color: NAVY },
+  ];
+  
+  targetData.forEach((t, i) => {
+    doc.setFontSize(12);
+    doc.setTextColor(GRAY[0], GRAY[1], GRAY[2]);
+    doc.text(t.label, margin + 20, targetsY + i * 30);
+    doc.setFontSize(14);
+    doc.setTextColor(t.color[0], t.color[1], t.color[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t.value, margin + 200, targetsY + i * 30, { align: 'right' });
+  });
+  
+  // Reasoning section
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.text('INVESTMENT REASONING', pageWidth / 2 + 40, 280);
+  doc.setDrawColor(...ORANGE);
+  doc.line(pageWidth / 2 + 40, 285, pageWidth / 2 + 200, 285);
+  
+  doc.setFontSize(11);
+  doc.setTextColor(...GRAY);
+  const reasoningLines = doc.splitTextToSize(recommendation.reasoning, 320);
+  doc.text(reasoningLines, pageWidth / 2 + 40, 310);
+  
+  drawFooter(`${symbol} Investment Analysis | ${dateStr}`);
 
-<!-- PAGE 8: Investment Thesis -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
+  // PAGE 3: Price Analysis
+  doc.addPage();
+  drawBackground();
+  drawCorners();
   
-  <div class="page-title">INVESTMENT THESIS</div>
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PRICE ANALYSIS', pageWidth / 2, 70, { align: 'center' });
   
-  <div class="box-row">
-    <div class="case-box bull">
-      <h3>BULL CASE</h3>
-      <ul>
-        <li>Price below sustainable level ($${sustainablePrice.toFixed(2)})</li>
-        <li>${agreement}% method agreement on ${recommendation.action}</li>
-        <li>Target upside of ${upside}%</li>
-        <li>Favorable risk/reward ratio of ${riskReward}:1</li>
-      </ul>
-    </div>
-    <div class="case-box bear">
-      <h3>BEAR CASE</h3>
-      <ul>
-        <li>Market volatility risk</li>
-        <li>Sector-specific headwinds possible</li>
-        <li>Stop loss at $${stopLoss.toFixed(2)} (-${downside}%)</li>
-        <li>External macro factors</li>
-      </ul>
-    </div>
-  </div>
+  // Left column - Rally Angle
+  doc.setFontSize(16);
+  doc.text('RALLY ANGLE ANALYSIS', margin, 120);
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(2);
+  doc.line(margin, 125, margin + 180, 125);
   
-  <div class="section-title">CONCLUSION</div>
-  <p class="description">Based on dual-method analysis, ${symbol} presents a ${recommendation.action} opportunity with ${combinedRisk} risk. Both price sustainability and institutional activity tracking methods show ${agreement}% agreement. The current price of $${currentPrice.toFixed(2)} is ${currentPrice < sustainablePrice ? 'below' : 'above'} the sustainable level of $${sustainablePrice.toFixed(2)}, suggesting ${currentPrice < sustainablePrice ? 'potential upside' : 'elevated risk'}.</p>
-</div>
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(...GRAY);
+  
+  const rallyData = [
+    { label: 'Angle Type', value: '1x4 Rally Angle' },
+    { label: 'Sustainable Price', value: `$${sustainablePrice.toFixed(2)}` },
+    { label: 'Current Price', value: `$${currentPrice.toFixed(2)}` },
+    { label: 'Deviation', value: `${((currentPrice - sustainablePrice) / sustainablePrice * 100).toFixed(1)}%` },
+    { label: 'Risk Level', value: gann.rallyAngle.riskLevel },
+  ];
+  
+  rallyData.forEach((r, i) => {
+    doc.setTextColor(...GRAY);
+    doc.text(r.label, margin + 20, 160 + i * 35);
+    doc.setTextColor(...NAVY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(r.value, margin + 280, 160 + i * 35, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+  });
+  
+  // Right column - Square of Nine
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...NAVY);
+  doc.text('SQUARE OF NINE LEVELS', pageWidth / 2 + 40, 120);
+  doc.setDrawColor(...ORANGE);
+  doc.line(pageWidth / 2 + 40, 125, pageWidth / 2 + 220, 125);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  
+  // Support levels
+  doc.setTextColor(...GREEN);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Support Levels', pageWidth / 2 + 60, 160);
+  doc.setFont('helvetica', 'normal');
+  supportLevels.forEach((level, i) => {
+    doc.setTextColor(...GRAY);
+    doc.text(`S${i + 1}:`, pageWidth / 2 + 60, 185 + i * 25);
+    doc.setTextColor(...GREEN);
+    doc.text(`$${level.level.toFixed(2)}`, pageWidth / 2 + 100, 185 + i * 25);
+  });
+  
+  // Resistance levels
+  doc.setTextColor(...RED);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Resistance Levels', pageWidth / 2 + 220, 160);
+  doc.setFont('helvetica', 'normal');
+  resistanceLevels.forEach((level, i) => {
+    doc.setTextColor(...GRAY);
+    doc.text(`R${i + 1}:`, pageWidth / 2 + 220, 185 + i * 25);
+    doc.setTextColor(...RED);
+    doc.text(`$${level.level.toFixed(2)}`, pageWidth / 2 + 260, 185 + i * 25);
+  });
+  
+  // Price range info
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('52-WEEK RANGE', margin, 380);
+  doc.setDrawColor(...ORANGE);
+  doc.line(margin, 385, margin + 130, 385);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(...GRAY);
+  doc.text(`Low: $${low52Week.toFixed(2)}`, margin + 20, 415);
+  doc.text(`High: $${high52Week.toFixed(2)}`, margin + 20, 440);
+  doc.text(`Current: $${currentPrice.toFixed(2)}`, margin + 20, 465);
+  
+  drawFooter(`${symbol} Investment Analysis | ${dateStr}`);
 
-<!-- PAGE 9: Methodology & Disclaimer -->
-<div class="page">
-  <div class="corner-tl"></div>
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
-  <div class="corner-br"></div>
+  // PAGE 4: Market Phase Analysis
+  doc.addPage();
+  drawBackground();
+  drawCorners();
   
-  <div class="page-title">METHODOLOGY & DISCLAIMER</div>
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('MARKET PHASE ANALYSIS', pageWidth / 2, 70, { align: 'center' });
   
-  <div class="section-title">TRIGGERSTIX DUAL-METHOD ANALYSIS FRAMEWORK</div>
-  <p class="description">This analysis employs a proprietary dual-method approach combining Price Sustainability Analysis and Institutional Activity Tracking to generate investment signals.</p>
+  // Current phase
+  doc.setFontSize(16);
+  doc.text('CURRENT PHASE', margin, 120);
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(2);
+  doc.line(margin, 125, margin + 130, 125);
   
-  <div class="section-title">PRICE SUSTAINABILITY ANALYSIS</div>
-  <p class="description">Evaluates price movements against mathematically derived sustainable levels. The 1x4 Rally Angle calculates the maximum sustainable rate of price appreciation based on historical patterns. Prices above sustainable levels indicate elevated risk; prices below suggest potential opportunity.</p>
+  const phaseColor = ney.phase === 'ACCUMULATION' || ney.phase === 'MARKUP' ? GREEN : RED;
+  doc.setFillColor(phaseColor[0], phaseColor[1], phaseColor[2]);
+  doc.roundedRect(margin, 150, 200, 50, 5, 5, 'F');
+  doc.setFontSize(20);
+  doc.setTextColor(255, 255, 255);
+  doc.text(ney.phase, margin + 100, 182, { align: 'center' });
   
-  <div class="section-title">INSTITUTIONAL ACTIVITY TRACKING</div>
-  <p class="description">Monitors market phase transitions by analyzing price-volume relationships and accumulation/distribution patterns. This method identifies periods of institutional buying (accumulation) and selling (distribution) to anticipate major price movements.</p>
+  // Phase details
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor(...GRAY);
   
-  <div class="section-title">AGREEMENT SCORING</div>
-  <p class="description">When both methods generate concordant signals, confidence in the recommendation increases. 100% agreement indicates both methods support the same directional bias.</p>
+  const phaseDetails = [
+    { label: 'Signal', value: ney.signal },
+    { label: 'Confidence', value: `${ney.confidence}%` },
+    { label: 'Risk Level', value: combinedRisk },
+  ];
   
-  <div class="disclaimer">
-    <strong>IMPORTANT DISCLAIMER:</strong> This report is for informational purposes only and does not constitute investment advice, an offer to sell, or a solicitation of an offer to buy any securities. Past performance is not indicative of future results. All investments involve risk, including potential loss of principal. The analysis presented is based on historical data and mathematical models which may not accurately predict future price movements. Investors should conduct their own due diligence and consult with qualified financial advisors before making investment decisions. The authors and publishers of this report assume no liability for any losses incurred as a result of using this information.
-  </div>
+  phaseDetails.forEach((p, i) => {
+    doc.setTextColor(...GRAY);
+    doc.text(p.label, margin + 20, 240 + i * 30);
+    doc.setTextColor(...NAVY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(p.value, margin + 180, 240 + i * 30, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+  });
   
-  <div class="footer">Generated by Triggerstix Analysis Platform | ${dateStr}</div>
-</div>
+  // Phase description
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PHASE DESCRIPTION', pageWidth / 2 + 40, 120);
+  doc.setDrawColor(...ORANGE);
+  doc.line(pageWidth / 2 + 40, 125, pageWidth / 2 + 190, 125);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(...GRAY);
+  const phaseDesc = getPhaseDescription(ney.phase);
+  const descLines = doc.splitTextToSize(phaseDesc, 340);
+  doc.text(descLines, pageWidth / 2 + 40, 160);
+  
+  drawFooter(`${symbol} Investment Analysis | ${dateStr}`);
 
-</body>
-</html>
-`;
+  // PAGE 5: Agreement Analysis
+  doc.addPage();
+  drawBackground();
+  drawCorners();
+  
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('AGREEMENT ANALYSIS', pageWidth / 2, 70, { align: 'center' });
+  
+  // Big agreement number
+  doc.setFontSize(72);
+  const agreementColor = agreement >= 80 ? GREEN : ORANGE;
+  doc.setTextColor(agreementColor[0], agreementColor[1], agreementColor[2]);
+  doc.text(`${agreement}%`, pageWidth / 2, 180, { align: 'center' });
+  
+  doc.setFontSize(18);
+  doc.setTextColor(...NAVY);
+  doc.text('METHOD AGREEMENT', pageWidth / 2, 210, { align: 'center' });
+  
+  // Comparison table
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('METHOD COMPARISON', margin, 270);
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(2);
+  doc.line(margin, 275, margin + 160, 275);
+  
+  // Table headers
+  const tableY = 310;
+  doc.setFillColor(...NAVY);
+  doc.rect(margin, tableY, pageWidth - 2 * margin, 30, 'F');
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
+  doc.text('Metric', margin + 20, tableY + 20);
+  doc.text('Price Analysis', margin + 250, tableY + 20);
+  doc.text('Market Phase', margin + 450, tableY + 20);
+  
+  // Table rows
+  doc.setFont('helvetica', 'normal');
+  const tableData = [
+    { metric: 'Signal', price: gann.rallyAngle.signal, market: ney.signal },
+    { metric: 'Risk Level', price: gann.rallyAngle.riskLevel, market: combinedRisk },
+    { metric: 'Confidence', price: 'High', market: `${ney.confidence}%` },
+  ];
+  
+  tableData.forEach((row, i) => {
+    const rowY = tableY + 50 + i * 35;
+    if (i % 2 === 0) {
+      doc.setFillColor(245, 247, 250);
+      doc.rect(margin, rowY - 12, pageWidth - 2 * margin, 35, 'F');
+    }
+    doc.setTextColor(...GRAY);
+    doc.text(row.metric, margin + 20, rowY + 10);
+    doc.setTextColor(...NAVY);
+    doc.text(row.price, margin + 250, rowY + 10);
+    doc.text(row.market, margin + 450, rowY + 10);
+  });
+  
+  drawFooter(`${symbol} Investment Analysis | ${dateStr}`);
 
-  // Create a temporary container to render the HTML
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '-9999px';
-  document.body.appendChild(container);
+  // PAGE 6: Company Profile
+  doc.addPage();
+  drawBackground();
+  drawCorners();
+  
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('COMPANY PROFILE', pageWidth / 2, 70, { align: 'center' });
+  
+  // Company info
+  doc.setFontSize(20);
+  doc.text(displayName, pageWidth / 2, 120, { align: 'center' });
+  
+  doc.setFontSize(14);
+  doc.setTextColor(...GRAY);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${sector} | ${industry}`, pageWidth / 2, 145, { align: 'center' });
+  
+  // Business summary
+  doc.setFontSize(14);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('BUSINESS DESCRIPTION', margin, 190);
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(2);
+  doc.line(margin, 195, margin + 180, 195);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  const summaryLines = doc.splitTextToSize(businessSummary.substring(0, 1200), pageWidth - 2 * margin - 40);
+  doc.text(summaryLines, margin + 20, 225);
+  
+  drawFooter(`${symbol} Investment Analysis | ${dateStr}`);
 
-  try {
-    const opt = {
-      margin: 0,
-      filename: `${symbol}InvestmentAnalysis.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { 
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        letterRendering: true,
-      },
-      jsPDF: { 
-        unit: 'in' as const, 
-        format: 'letter', 
-        orientation: 'landscape' as const 
-      },
-      pagebreak: { mode: 'css', before: '.page', avoid: 'img' }
-    };
+  // PAGE 7: Trading Parameters
+  doc.addPage();
+  drawBackground();
+  drawCorners();
+  
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TRADING PARAMETERS', pageWidth / 2, 70, { align: 'center' });
+  
+  // Entry/Exit boxes
+  const boxWidth = 200;
+  const boxHeight = 120;
+  const boxY = 130;
+  
+  // Entry box
+  doc.setFillColor(...GREEN);
+  doc.roundedRect(margin + 60, boxY, boxWidth, boxHeight, 5, 5, 'F');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ENTRY ZONE', margin + 60 + boxWidth / 2, boxY + 30, { align: 'center' });
+  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`$${(currentPrice * 0.98).toFixed(2)}`, margin + 60 + boxWidth / 2, boxY + 70, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`to $${(currentPrice * 1.02).toFixed(2)}`, margin + 60 + boxWidth / 2, boxY + 95, { align: 'center' });
+  
+  // Target box
+  doc.setFillColor(...ORANGE);
+  doc.roundedRect(pageWidth / 2 - boxWidth / 2, boxY, boxWidth, boxHeight, 5, 5, 'F');
+  doc.setFontSize(14);
+  doc.text('TARGET PRICE', pageWidth / 2, boxY + 30, { align: 'center' });
+  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`$${targetPrice.toFixed(2)}`, pageWidth / 2, boxY + 70, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`+${upside}% upside`, pageWidth / 2, boxY + 95, { align: 'center' });
+  
+  // Stop loss box
+  doc.setFillColor(...RED);
+  doc.roundedRect(pageWidth - margin - 60 - boxWidth, boxY, boxWidth, boxHeight, 5, 5, 'F');
+  doc.setFontSize(14);
+  doc.text('STOP LOSS', pageWidth - margin - 60 - boxWidth / 2, boxY + 30, { align: 'center' });
+  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`$${stopLoss.toFixed(2)}`, pageWidth - margin - 60 - boxWidth / 2, boxY + 70, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`-${downside}% risk`, pageWidth - margin - 60 - boxWidth / 2, boxY + 95, { align: 'center' });
+  
+  // Position sizing
+  doc.setFontSize(16);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('POSITION SIZING GUIDE', margin, 300);
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(2);
+  doc.line(margin, 305, margin + 190, 305);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(...GRAY);
+  const sizingText = `Risk/Reward Ratio: ${riskReward}:1\n\nRecommended position size should be based on your total portfolio value and risk tolerance. Never risk more than 1-2% of your portfolio on a single trade.`;
+  const sizingLines = doc.splitTextToSize(sizingText, 300);
+  doc.text(sizingLines, margin + 20, 340);
+  
+  drawFooter(`${symbol} Investment Analysis | ${dateStr}`);
 
-    const pdf = await html2pdf().set(opt).from(container).outputPdf('blob');
-    return pdf;
-  } finally {
-    document.body.removeChild(container);
-  }
+  // PAGE 8: Investment Thesis
+  doc.addPage();
+  drawBackground();
+  drawCorners();
+  
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('INVESTMENT THESIS', pageWidth / 2, 70, { align: 'center' });
+  
+  // Bull case
+  const caseWidth = (pageWidth - 3 * margin) / 2;
+  const caseHeight = 350;
+  const caseY = 110;
+  
+  doc.setFillColor(...GREEN);
+  doc.roundedRect(margin, caseY, caseWidth, caseHeight, 5, 5, 'F');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BULL CASE', margin + caseWidth / 2, caseY + 35, { align: 'center' });
+  
+  doc.setFontSize(10);
+  const bullPoints = [
+    `• Price below sustainable level ($${sustainablePrice.toFixed(2)})`,
+    `• ${agreement}% method agreement supports bullish bias`,
+    `• Target price of $${targetPrice.toFixed(2)} (+${upside}%)`,
+    `• Favorable risk/reward ratio of ${riskReward}:1`,
+    `• ${ney.phase} phase indicates potential upside`,
+  ];
+  bullPoints.forEach((point, i) => {
+    doc.text(point, margin + 15, caseY + 70 + i * 30);
+  });
+  
+  // Bear case
+  doc.setFillColor(...RED);
+  doc.roundedRect(margin + caseWidth + margin, caseY, caseWidth, caseHeight, 5, 5, 'F');
+  doc.setFontSize(18);
+  doc.text('BEAR CASE', margin + caseWidth + margin + caseWidth / 2, caseY + 35, { align: 'center' });
+  
+  doc.setFontSize(10);
+  const bearPoints = [
+    '• Market conditions may deteriorate',
+    '• Sector rotation could impact performance',
+    `• Stop loss at $${stopLoss.toFixed(2)} (-${downside}%)`,
+    '• External macro factors remain uncertain',
+    '• Technical resistance levels may hold',
+  ];
+  bearPoints.forEach((point, i) => {
+    doc.text(point, margin + caseWidth + margin + 15, caseY + 70 + i * 30);
+  });
+  
+  drawFooter(`${symbol} Investment Analysis | ${dateStr}`);
+
+  // PAGE 9: Methodology & Disclaimer
+  doc.addPage();
+  drawBackground();
+  drawCorners();
+  
+  doc.setFontSize(28);
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.text('METHODOLOGY', pageWidth / 2, 70, { align: 'center' });
+  
+  // Methodology sections
+  doc.setFontSize(14);
+  doc.text('TRIGGERSTIX DUAL-METHOD ANALYSIS FRAMEWORK', margin, 120);
+  doc.setDrawColor(...ORANGE);
+  doc.setLineWidth(2);
+  doc.line(margin, 125, margin + 350, 125);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  
+  const methodText = 'This analysis employs a proprietary dual-method approach combining Price Sustainability Analysis and Institutional Activity Tracking to generate investment signals.';
+  doc.text(doc.splitTextToSize(methodText, pageWidth - 2 * margin), margin, 150);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...NAVY);
+  doc.text('PRICE SUSTAINABILITY ANALYSIS', margin, 200);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  const priceText = 'Evaluates price movements against mathematically derived sustainable levels. The 1x4 Rally Angle calculates the maximum sustainable rate of price appreciation based on historical patterns.';
+  doc.text(doc.splitTextToSize(priceText, pageWidth - 2 * margin), margin, 220);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...NAVY);
+  doc.text('INSTITUTIONAL ACTIVITY TRACKING', margin, 280);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  const instText = 'Monitors market phase transitions by analyzing price-volume relationships and accumulation/distribution patterns. This method identifies periods of institutional buying and selling.';
+  doc.text(doc.splitTextToSize(instText, pageWidth - 2 * margin), margin, 300);
+  
+  // Disclaimer
+  doc.setFillColor(245, 247, 250);
+  doc.roundedRect(margin, 360, pageWidth - 2 * margin, 150, 5, 5, 'F');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...NAVY);
+  doc.text('IMPORTANT DISCLAIMER', margin + 15, 380);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  const disclaimer = 'This report is for informational purposes only and does not constitute investment advice, an offer to sell, or a solicitation of an offer to buy any securities. Past performance is not indicative of future results. All investments involve risk, including potential loss of principal. The analysis presented is based on historical data and mathematical models which may not accurately predict future price movements. Investors should conduct their own due diligence and consult with qualified financial advisors before making investment decisions. The authors and publishers of this report assume no liability for any losses incurred as a result of using this information.';
+  const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 2 * margin - 30);
+  doc.text(disclaimerLines, margin + 15, 400);
+  
+  drawFooter(`Generated by Triggerstix Analysis Platform | ${dateStr}`);
+
+  // Return as blob
+  return doc.output('blob');
 }
 
 function getPhaseDescription(phase: string): string {
