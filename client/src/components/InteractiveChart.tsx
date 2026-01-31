@@ -700,7 +700,7 @@ export default function InteractiveChart({
           </div>
         )}
         {/* Top toolbar - Timeframe and indicators */}
-        <div className="absolute top-2 left-2 right-2 z-10 flex justify-between items-center" style={{ top: ohlc ? '48px' : '8px' }}>
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1" style={{ top: ohlc ? '48px' : '8px' }}>
           {/* Timeframe buttons */}
           <div className="flex gap-1">
             {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y'] as const).map(tf => (
@@ -717,7 +717,7 @@ export default function InteractiveChart({
               </button>
             ))}
           </div>
-          {/* SMA and EMA indicators */}
+          {/* SMA and EMA indicators - stacked below timeframe */}
           <div className="flex gap-1">
             <button
               onClick={() => {
