@@ -45,3 +45,21 @@ export const chartDrawings = mysqlTable("chart_drawings", {
 
 export type ChartDrawing = typeof chartDrawings.$inferSelect;
 export type InsertChartDrawing = typeof chartDrawings.$inferInsert;
+
+/**
+ * Analysis history table for tracking user's past analyses
+ */
+export const analysisHistory = mysqlTable("analysis_history", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  companyName: varchar("companyName", { length: 255 }),
+  recommendation: varchar("recommendation", { length: 20 }), // BUY, SELL, HOLD, AVOID
+  riskLevel: varchar("riskLevel", { length: 20 }), // LOW, MODERATE, HIGH, EXTREME
+  agreement: varchar("agreement", { length: 10 }), // e.g., "85%"
+  currentPrice: varchar("currentPrice", { length: 20 }),
+  analyzedAt: timestamp("analyzedAt").defaultNow().notNull(),
+});
+
+export type AnalysisHistory = typeof analysisHistory.$inferSelect;
+export type InsertAnalysisHistory = typeof analysisHistory.$inferInsert;

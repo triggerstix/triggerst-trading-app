@@ -121,6 +121,48 @@ export const appRouter = router({
       }),
   }),
 
+  analysisHistory: router({
+    save: protectedProcedure
+      .input(z.object({
+        symbol: z.string(),
+        companyName: z.string().nullable().optional(),
+        recommendation: z.string().nullable().optional(),
+        riskLevel: z.string().nullable().optional(),
+        agreement: z.string().nullable().optional(),
+        currentPrice: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.saveAnalysisHistory(
+          ctx.user.id,
+          input.symbol,
+          input.companyName ?? null,
+          input.recommendation ?? null,
+          input.riskLevel ?? null,
+          input.agreement ?? null,
+          input.currentPrice ?? null
+        );
+      }),
+
+    getHistory: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.getAnalysisHistory(ctx.user.id, input?.limit ?? 50);
+      }),
+
+    deleteItem: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteAnalysisHistoryItem(ctx.user.id, input.id);
+        return { success: true };
+      }),
+
+    clearHistory: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await db.clearAnalysisHistory(ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
   analysis: router({
     // Analyze stock with real Yahoo Finance data
     analyzeStock: publicProcedure

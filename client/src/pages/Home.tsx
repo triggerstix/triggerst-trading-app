@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Star } from "lucide-react";
+import { Search, Star, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
@@ -34,6 +34,15 @@ export default function Home() {
       {user && (
         <div className="border-b border-slate-800 bg-[#0d1129]">
           <div className="container mx-auto px-4 py-3 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/history")}
+              className="text-slate-400 hover:text-white flex items-center gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              History
+            </Button>
             <Button
               variant="ghost"
               size="sm"

@@ -484,3 +484,15 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Use distinct colors for EMA lines (cyan for EMA12, pink for EMA26)
 - [x] Test with AAPL - working correctly
 - [ ] Save checkpoint
+
+
+## Phase 41: Analysis History Page
+- [ ] Create analysisHistory table in database schema
+- [ ] Add save/retrieve procedures for analysis history
+- [ ] Auto-save each analysis when user views a ticker
+- [ ] Build /history page with list of past analyses
+- [ ] Show ticker, company name, recommendation, timestamp
+- [ ] Add quick re-analyze button for each entry
+- [ ] Add delete functionality for history entries
+- [ ] Add navigation link to history page
+- [ ] Save checkpoint

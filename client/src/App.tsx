@@ -10,6 +10,7 @@ import Watchlist from "./pages/Watchlist";
 import StockAnalysisNew from "./pages/StockAnalysisNew";
 import StockAnalysisSearch from "./pages/StockAnalysisSearch";
 import ChartOnly from "./pages/ChartOnly";
+import History from "./pages/History";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/chart/:symbol" component={ChartView} />
       <Route path="/chart-only/:symbol" component={ChartOnly} />
       <Route path="/watchlist" component={Watchlist} />
+      <Route path="/history" component={History} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

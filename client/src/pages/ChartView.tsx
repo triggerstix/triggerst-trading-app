@@ -98,6 +98,24 @@ export default function ChartView() {
       toast.error(`Failed to remove from watchlist: ${error.message}`);
     },
   });
+
+  // Save analysis to history
+  const saveHistoryMutation = trpc.analysisHistory.save.useMutation();
+  const [historySaved, setHistorySaved] = useState(false);
+
+  useEffect(() => {
+    if (user && analysis && symbol && !historySaved) {
+      saveHistoryMutation.mutate({
+        symbol: symbol.toUpperCase(),
+        companyName: analysis.companyProfile?.longName || analysis.companyProfile?.shortName || null,
+        recommendation: analysis.recommendation?.action || null,
+        riskLevel: analysis.combinedRisk || null,
+        agreement: analysis.agreement ? `${analysis.agreement}%` : null,
+        currentPrice: analysis.stockInfo?.currentPrice?.toFixed(2) || null,
+      });
+      setHistorySaved(true);
+    }
+  }, [user, analysis, symbol, historySaved]);
   
   const handleWatchlistToggle = () => {
     if (!user) {

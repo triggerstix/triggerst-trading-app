@@ -1,6 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, watchlist, InsertWatchlist, chartDrawings, InsertChartDrawing } from "../drizzle/schema";
+import { InsertUser, users, watchlist, InsertWatchlist, chartDrawings, InsertChartDrawing, analysisHistory, InsertAnalysisHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -222,4 +222,75 @@ export async function deleteChartDrawings(userId: string, symbol: string): Promi
       eq(chartDrawings.symbol, symbol.toUpperCase())
     )
   );
+}
+
+/**
+ * Analysis history helpers
+ */
+export async function saveAnalysisHistory(
+  userId: string,
+  symbol: string,
+  companyName: string | null,
+  recommendation: string | null,
+  riskLevel: string | null,
+  agreement: string | null,
+  currentPrice: string | null
+): Promise<{ id: string }> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const id = `${userId}-${symbol.toUpperCase()}-${Date.now()}`;
+  
+  const historyItem: InsertAnalysisHistory = {
+    id,
+    userId,
+    symbol: symbol.toUpperCase(),
+    companyName,
+    recommendation,
+    riskLevel,
+    agreement,
+    currentPrice,
+  };
+
+  await db.insert(analysisHistory).values(historyItem);
+  return { id };
+}
+
+export async function getAnalysisHistory(userId: string, limit: number = 50) {
+  const db = await getDb();
+  if (!db) {
+    return [];
+  }
+
+  return db
+    .select()
+    .from(analysisHistory)
+    .where(eq(analysisHistory.userId, userId))
+    .orderBy(desc(analysisHistory.analyzedAt))
+    .limit(limit);
+}
+
+export async function deleteAnalysisHistoryItem(userId: string, id: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.delete(analysisHistory).where(
+    and(
+      eq(analysisHistory.userId, userId),
+      eq(analysisHistory.id, id)
+    )
+  );
+}
+
+export async function clearAnalysisHistory(userId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.delete(analysisHistory).where(eq(analysisHistory.userId, userId));
 }
