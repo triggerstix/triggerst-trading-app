@@ -74,6 +74,94 @@ async function htmlToPdf(html: string, filename: string): Promise<string> {
 
 export const exportRouter = router({
   /**
+   * Proxy endpoint to fetch company logos (bypasses CORS)
+   */
+  getCompanyLogo: publicProcedure
+    .input(z.object({ symbol: z.string() }))
+    .query(async ({ input }) => {
+      const { symbol } = input;
+      
+      // Common ticker to domain mappings
+      const tickerDomainMap: Record<string, string> = {
+        'AAPL': 'apple.com',
+        'MSFT': 'microsoft.com',
+        'GOOGL': 'google.com',
+        'GOOG': 'google.com',
+        'AMZN': 'amazon.com',
+        'META': 'meta.com',
+        'TSLA': 'tesla.com',
+        'NVDA': 'nvidia.com',
+        'JPM': 'jpmorganchase.com',
+        'V': 'visa.com',
+        'MA': 'mastercard.com',
+        'DIS': 'disney.com',
+        'NFLX': 'netflix.com',
+        'INTC': 'intel.com',
+        'AMD': 'amd.com',
+        'CRM': 'salesforce.com',
+        'ORCL': 'oracle.com',
+        'IBM': 'ibm.com',
+        'CSCO': 'cisco.com',
+        'ADBE': 'adobe.com',
+        'PYPL': 'paypal.com',
+        'BA': 'boeing.com',
+        'KO': 'coca-cola.com',
+        'PEP': 'pepsi.com',
+        'WMT': 'walmart.com',
+        'HD': 'homedepot.com',
+        'MCD': 'mcdonalds.com',
+        'NKE': 'nike.com',
+        'SBUX': 'starbucks.com',
+        'UNH': 'unitedhealthgroup.com',
+        'JNJ': 'jnj.com',
+        'PFE': 'pfizer.com',
+        'MRNA': 'modernatx.com',
+        'XOM': 'exxonmobil.com',
+        'CVX': 'chevron.com',
+        'BRK.A': 'berkshirehathaway.com',
+        'BRK.B': 'berkshirehathaway.com',
+        'GS': 'goldmansachs.com',
+        'MS': 'morganstanley.com',
+        'BAC': 'bankofamerica.com',
+        'C': 'citigroup.com',
+        'WFC': 'wellsfargo.com',
+        'T': 'att.com',
+        'VZ': 'verizon.com',
+        'TMUS': 't-mobile.com',
+        'IDCC': 'interdigital.com',
+        'HON': 'honeywell.com',
+      };
+      
+      // Try different domain variations
+      const domains = [
+        tickerDomainMap[symbol.toUpperCase()],
+        `${symbol.toLowerCase()}.com`,
+      ].filter(Boolean) as string[];
+      
+      for (const domain of domains) {
+        try {
+          // Use Google's favicon service (more reliable than Clearbit)
+          const logoUrl = `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=128`;
+          const response = await fetch(logoUrl);
+          
+          if (response.ok) {
+            const buffer = await response.arrayBuffer();
+            const base64 = Buffer.from(buffer).toString('base64');
+            const contentType = response.headers.get('content-type') || 'image/png';
+            return {
+              success: true,
+              logoBase64: `data:${contentType};base64,${base64}`,
+            };
+          }
+        } catch (e) {
+          // Try next domain
+        }
+      }
+      
+      return { success: false, logoBase64: null };
+    }),
+
+  /**
    * Generate comprehensive Investment Analysis PDF (9 pages, HON style)
    */
   investmentAnalysis: publicProcedure

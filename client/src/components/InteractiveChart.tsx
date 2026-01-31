@@ -694,7 +694,7 @@ export default function InteractiveChart({
             </button>
           </div>
         </div>
-        <div ref={chartContainerRef} className="w-full flex-1" style={{ minHeight: showRSI || showMACD ? 'calc(100% - 220px)' : '100%' }} />
+        <div ref={chartContainerRef} data-chart-container className="w-full flex-1" style={{ minHeight: showRSI || showMACD ? 'calc(100% - 220px)' : '100%' }} />
         
         {/* RSI Indicator Pane */}
         {showRSI && (

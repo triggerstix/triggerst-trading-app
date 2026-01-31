@@ -460,3 +460,18 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Use Liberation Sans font (Arial-compatible)
 - [x] Test with multiple tickers (AAPL 348KB, MSFT 350KB)
 - [ ] Save checkpoint: "Unified Investment Analysis PDF export"
+
+
+## Phase 39: PDF Redesign - 5 Pages with New Style
+- [ ] Condense 9-page PDF to 5 pages
+- [ ] New color scheme: white, black, shades of grey, blue
+- [ ] Page 1: Title + Executive Summary
+- [ ] Page 2: Price Analysis + Market Phase Analysis + Chart Image
+- [ ] Page 3: Agreement Analysis + Trading Parameters
+- [ ] Page 4: Company Profile with logo, history, and direction
+- [ ] Page 5: Investment Thesis + Methodology/Disclaimer
+- [ ] Add company logo fetching from Clearbit/Logo API
+- [ ] Add company history and future direction content
+- [ ] Embed candlestick chart as image in PDF
+- [ ] Test with multiple tickers
+- [ ] Save checkpoint

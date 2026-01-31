@@ -5,6 +5,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star, Maximize2 } from "
 import InteractiveChart from "@/components/InteractiveChart";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { generateClientPdf } from "@/utils/clientPdfGenerator";
+import html2canvas from 'html2canvas';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -130,6 +131,60 @@ export default function ChartView() {
     ];
   }, [analysis?.gann?.rallyAngle?.sustainablePrice]);
 
+  // Capture chart as image for PDF
+  const captureChartImage = async (): Promise<string | undefined> => {
+    try {
+      // Try to get the chart container
+      const chartElement = document.querySelector('[data-chart-container]') as HTMLElement;
+      if (!chartElement) {
+        console.log('Chart container not found');
+        return undefined;
+      }
+      
+      // Find the main canvas element (TradingView chart)
+      const mainCanvas = chartElement.querySelector('canvas') as HTMLCanvasElement;
+      if (mainCanvas) {
+        // Directly export the canvas to image
+        try {
+          return mainCanvas.toDataURL('image/png');
+        } catch (e) {
+          console.log('Canvas export failed, trying html2canvas:', e);
+        }
+      }
+      
+      // Fallback to html2canvas for the entire container
+      const canvas = await html2canvas(chartElement, {
+        backgroundColor: '#0a0e1a',
+        scale: 1.5,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: false,
+      });
+      return canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error('Failed to capture chart:', error);
+      return undefined;
+    }
+  };
+
+  // Fetch company logo via server proxy (bypasses CORS)
+  const fetchCompanyLogo = async (): Promise<string | undefined> => {
+    try {
+      // Use fetch to call the tRPC endpoint directly with batch format
+      const batchInput = JSON.stringify({"0":{"json":{"symbol": symbol}}});
+      const response = await fetch(`/api/trpc/export.getCompanyLogo?batch=1&input=${encodeURIComponent(batchInput)}`);
+      const data = await response.json();
+      // Parse batch response format
+      if (Array.isArray(data) && data[0]?.result?.data?.json?.success && data[0]?.result?.data?.json?.logoBase64) {
+        return data[0].result.data.json.logoBase64;
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
   // Export handler - client-side PDF generation (works in production)
   const handleExport = async () => {
     if (!symbol || !analysis) return;
@@ -137,6 +192,12 @@ export default function ChartView() {
     const loadingToast = toast.loading('Generating Investment Analysis PDF...');
     
     try {
+      // Capture chart image and fetch logo in parallel
+      const [chartImageBase64, logoBase64] = await Promise.all([
+        captureChartImage(),
+        fetchCompanyLogo(),
+      ]);
+      
       // Generate PDF entirely on client side using jsPDF
       const pdfBlob = await generateClientPdf({
         symbol,
@@ -164,6 +225,8 @@ export default function ChartView() {
         peakPrice: analysis.stockInfo.peakPrice,
         startPrice: analysis.stockInfo.startPrice,
         tradingDays: analysis.stockInfo.tradingDays,
+        chartImageBase64,
+        logoBase64,
       });
       
       // Download the PDF
