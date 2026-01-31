@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, TrendingUp, TrendingDown, Activity, Star, Maximize2 } from "lucide-react";
 import InteractiveChart from "@/components/InteractiveChart";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { generateClientPdf } from "@/utils/clientPdfGenerator";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -129,45 +130,50 @@ export default function ChartView() {
     ];
   }, [analysis?.gann?.rallyAngle?.sustainablePrice]);
 
-  // Export handler - using direct fetch for PDF downloads
+  // Export handler - client-side PDF generation (works in production)
   const handleExport = async () => {
-    if (!symbol) return;
+    if (!symbol || !analysis) return;
     
     const loadingToast = toast.loading('Generating Investment Analysis PDF...');
     
     try {
-      // Use direct fetch to tRPC endpoint for PDF data
-      const endpoint = `/api/trpc/export.investmentAnalysis?batch=1&input=${encodeURIComponent(JSON.stringify({ "0": { json: { symbol } } }))}`;
-      const response = await fetch(endpoint);
+      // Generate PDF entirely on client side using jsPDF
+      const pdfBlob = await generateClientPdf({
+        symbol,
+        companyName: analysis.companyProfile?.longName || analysis.companyProfile?.shortName || symbol,
+        currentPrice: analysis.stockInfo.currentPrice,
+        high52Week: analysis.stockInfo.high52Week,
+        low52Week: analysis.stockInfo.low52Week,
+        gann: {
+          rallyAngle: {
+            sustainablePrice: analysis.gann.rallyAngle.sustainablePrice,
+            riskLevel: analysis.gann.riskLevel,
+            signal: analysis.gann.riskLevel === 'LOW' ? 'BUY' : 'HOLD',
+          },
+          squareOfNineLevels: analysis.gann.squareOfNineLevels.map(l => ({ level: l.level, type: l.type, description: l.type })),
+        },
+        ney: {
+          phase: analysis.ney.currentPhase,
+          signal: analysis.ney.riskLevel === 'LOW' ? 'BUY' : analysis.ney.riskLevel === 'EXTREME' ? 'SELL' : 'HOLD',
+          confidence: 100 - (analysis.ney.riskScore || 1) * 20,
+        },
+        recommendation: analysis.recommendation,
+        agreement: analysis.agreement,
+        combinedRisk: analysis.combinedRisk,
+        companyProfile: analysis.companyProfile,
+        peakPrice: analysis.stockInfo.peakPrice,
+        startPrice: analysis.stockInfo.startPrice,
+        tradingDays: analysis.stockInfo.tradingDays,
+      });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      const result = data[0]?.result?.data?.json;
-      
-      if (!result || !result.content) {
-        throw new Error('No content in response');
-      }
-      
-      // Decode base64 PDF content
-      const binaryString = atob(result.content);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      
-      // Create blob and download
-      const blob = new Blob([bytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
+      // Download the PDF
+      const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = result.filename || `${symbol}_report.pdf`;
+      a.download = `${symbol}InvestmentAnalysis.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      // Delay URL revocation to allow download to complete
       setTimeout(() => URL.revokeObjectURL(url), 2000);
       
       toast.dismiss(loadingToast);
