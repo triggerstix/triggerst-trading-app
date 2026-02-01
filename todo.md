@@ -496,3 +496,10 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [ ] Add delete functionality for history entries
 - [ ] Add navigation link to history page
 - [ ] Save checkpoint
+
+
+## Phase 42: Target Price Calculation Adjustment
+- [x] Change target from sustainable price to Square of Nine resistance
+- [x] Use 360° resistance level as primary target for more realistic targets
+- [x] Test with AAPL - target now $293.00 (was $889.88)
+- [ ] Save checkpoint

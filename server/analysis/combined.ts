@@ -234,18 +234,24 @@ export function generateRecommendation(
       reasoning: "Moderate risk. Hold current positions with stop-loss at key support.",
     };
   } else {
-    // LOW risk
+    // LOW risk - use Square of Nine 360° resistance as target (more realistic than sustainable price)
+    const resistanceLevels = gann.squareOfNineLevels.filter(l => l.type === "resistance");
+    // Get the highest resistance level (360° level) for primary target
+    const targetLevel = resistanceLevels.length > 0 
+      ? resistanceLevels[resistanceLevels.length - 1]?.price 
+      : currentPrice * 1.25;
+    
     if (gann.rallyAngle.deviation < 0) {
       return {
         action: "BUY",
         stopLoss: squareOfNineSupport * 0.9,
-        target: gann.rallyAngle.sustainablePrice,
+        target: targetLevel,
         reasoning: "Low risk with price below sustainable levels. Potential buying opportunity.",
       };
     } else {
       return {
         action: "HOLD",
-        target: gann.squareOfNineLevels.find(l => l.type === "resistance")?.price,
+        target: targetLevel,
         reasoning: "Low risk. Hold for upside potential.",
       };
     }
