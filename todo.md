@@ -503,3 +503,17 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Use 360° resistance level as primary target for more realistic targets
 - [x] Test with AAPL - target now $293.00 (was $889.88)
 - [ ] Save checkpoint
+
+
+## Phase 43: Fix Drawing Tools Bug
+- [x] Investigate "cursor but no line" issue with trendline drawing
+- [x] Identify root cause: lightweight-charts line series requires time-ordered data
+- [x] Fix addLineSeries API call (v4 uses addSeries with LineSeries type)
+- [x] Fix time format mismatch (chart uses date strings, click returns timestamps)
+- [x] Implement workaround: use price lines instead of line series for trendlines
+- [x] Test trendline drawing - now shows T-Start and T-End markers
+- [x] Test horizontal line drawing - working (H-Line at clicked price)
+- [x] Test Fibonacci retracement - working (shows all 6 levels)
+- [x] Test Clear All Drawings button - working
+- [ ] Save checkpoint
+

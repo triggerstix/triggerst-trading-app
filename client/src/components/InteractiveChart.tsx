@@ -48,8 +48,19 @@ export default function InteractiveChart({
     onTimeframeChange?.(tf);
   };
   const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
+  const drawingModeRef = useRef<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
   const [drawings, setDrawings] = useState<any[]>([]);
-  const [drawingStart, setDrawingStart] = useState<{ time: number; price: number } | null>(null);
+  const [drawingStart, setDrawingStart] = useState<{ time: string | number; price: number } | null>(null);
+  const drawingStartRef = useRef<{ time: string | number; price: number } | null>(null);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    drawingModeRef.current = drawingMode;
+  }, [drawingMode]);
+
+  useEffect(() => {
+    drawingStartRef.current = drawingStart;
+  }, [drawingStart]);
   
   // SMA overlay states
   const [showSMA20, setShowSMA20] = useState(false);
@@ -351,14 +362,19 @@ export default function InteractiveChart({
 
     // Drawing functionality
     const handleChartClick = (param: any) => {
-      if (drawingMode === 'none' || !param.point) return;
+      const currentMode = drawingModeRef.current;
+      console.log('Chart clicked, drawing mode:', currentMode, 'param:', param);
+      if (currentMode === 'none' || !param.point) {
+        console.log('Skipping - mode is none or no point');
+        return;
+      }
 
       const price = candlestickSeries.coordinateToPrice(param.point.y);
       if (price === null) return; // Guard against null price
       const time = param.time;
 
       // Horizontal line only needs one click
-      if (drawingMode === 'horizontal') {
+      if (currentMode === 'horizontal') {
         const newDrawing = {
           type: 'horizontal',
           price,
@@ -372,14 +388,15 @@ export default function InteractiveChart({
       // Trendline and Fibonacci need two clicks
       if (!param.time) return;
 
-      if (!drawingStart) {
+      const currentStart = drawingStartRef.current;
+      if (!currentStart) {
         // First click - start drawing
         setDrawingStart({ time, price });
       } else {
         // Second click - complete drawing
         const newDrawing = {
-          type: drawingMode,
-          start: drawingStart,
+          type: currentMode,
+          start: currentStart,
           end: { time, price },
         };
         setDrawings(prev => [...prev, newDrawing]);
@@ -390,9 +407,63 @@ export default function InteractiveChart({
 
     chart.subscribeClick(handleChartClick);
 
+    // Also add direct click handler as fallback
+    const handleContainerClick = (e: MouseEvent) => {
+      const currentMode = drawingModeRef.current;
+      console.log('Container clicked, drawing mode:', currentMode);
+      if (currentMode === 'none') return;
+      
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Convert coordinates to price/time
+      const price = candlestickSeries.coordinateToPrice(y);
+      const time = chart.timeScale().coordinateToTime(x);
+      
+      console.log('Container click - x:', x, 'y:', y, 'price:', price, 'time:', time);
+      
+      if (price === null) return;
+      
+      // Horizontal line only needs one click
+      if (currentMode === 'horizontal') {
+        const newDrawing = {
+          type: 'horizontal',
+          price,
+          color: '#fbbf24',
+        };
+        setDrawings(prev => [...prev, newDrawing]);
+        setDrawingMode('none');
+        return;
+      }
+      
+      // Trendline and Fibonacci need two clicks
+      if (!time) return;
+      
+      const currentStart = drawingStartRef.current;
+      if (!currentStart) {
+        // Store time as-is (can be string or number depending on chart format)
+        setDrawingStart({ time: time as string | number, price });
+      } else {
+        const newDrawing = {
+          type: currentMode,
+          start: currentStart,
+          end: { time: time as string | number, price },
+        };
+        setDrawings(prev => [...prev, newDrawing]);
+        setDrawingStart(null);
+        setDrawingMode('none');
+      }
+    };
+    
+    chartContainerRef.current?.addEventListener('click', handleContainerClick);
+
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.unsubscribeClick(handleChartClick);
+      chartContainerRef.current?.removeEventListener('click', handleContainerClick);
       chart.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -553,18 +624,32 @@ export default function InteractiveChart({
         });
         priceLineRefs.current.push(priceLine);
       } else if (drawing.type === 'trendline') {
-        // Draw trendline
-        const series = (chartRef.current as any).addLineSeries({
+        // For trendlines, we'll draw two horizontal price lines at start and end prices
+        // This is a workaround since lightweight-charts line series has strict time ordering requirements
+        const startPrice = drawing.start.price;
+        const endPrice = drawing.end.price;
+        
+        // Create a price line at the start price
+        const startLine = candlestickSeriesRef.current.createPriceLine({
+          price: startPrice,
           color: '#06b6d4',
-          lineWidth: 2,
-          priceLineVisible: false,
-          lastValueVisible: false,
+          lineWidth: 1,
+          lineStyle: 2, // Dashed
+          axisLabelVisible: true,
+          title: 'T-Start',
         });
-        series.setData([
-          { time: drawing.start.time, value: drawing.start.price },
-          { time: drawing.end.time, value: drawing.end.price },
-        ]);
-        drawingSeriesRef.current.push(series);
+        priceLineRefs.current.push(startLine);
+        
+        // Create a price line at the end price
+        const endLine = candlestickSeriesRef.current.createPriceLine({
+          price: endPrice,
+          color: '#06b6d4',
+          lineWidth: 1,
+          lineStyle: 2, // Dashed
+          axisLabelVisible: true,
+          title: 'T-End',
+        });
+        priceLineRefs.current.push(endLine);
       } else if (drawing.type === 'fibonacci') {
         // Draw Fibonacci retracement levels
         const high = Math.max(drawing.start.price, drawing.end.price);
