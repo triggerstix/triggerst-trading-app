@@ -1,10 +1,13 @@
 /**
- * Combined Gann + Ney Analysis Engine
- * Integrates geometric and specialist/volume analysis for comprehensive forecasting
+ * Combined Analysis Engine
+ * Integrates geometric price analysis and institutional activity analysis for comprehensive forecasting
  */
 
-import { GannAnalysis, analyzeGann } from "./gann";
+import { PriceAnalysis, analyzePriceAction } from "./priceAnalysis";
 import { NeyAnalysis, analyzeNey } from "./ney";
+
+// Re-export for backward compatibility
+export type { PriceAnalysis as GannAnalysis } from "./priceAnalysis";
 
 export interface Scenario {
   id: number;
@@ -23,26 +26,26 @@ export interface Recommendation {
 }
 
 export interface CombinedAnalysis {
-  gann: GannAnalysis;
+  gann: PriceAnalysis;
   ney: NeyAnalysis;
   combinedRisk: "LOW" | "MODERATE" | "HIGH" | "EXTREME";
   combinedScore: number;
-  agreement: number; // 0-100, how much Gann and Ney agree
+  agreement: number; // 0-100, how much both methods agree
   scenarios: Scenario[];
   recommendation: Recommendation;
   summary: string;
 }
 
 /**
- * Calculate agreement between Gann and Ney analyses
+ * Calculate agreement between price analysis and institutional activity analysis
  */
-export function calculateAgreement(gann: GannAnalysis, ney: NeyAnalysis): number {
+export function calculateAgreement(priceResult: PriceAnalysis, neyResult: NeyAnalysis): number {
   // Both methodologies agree when risk levels are similar
   const riskLevels = { LOW: 1, MODERATE: 2, HIGH: 3, EXTREME: 4 };
-  const gannRisk = riskLevels[gann.riskLevel];
-  const neyRisk = riskLevels[ney.riskLevel];
+  const priceRisk = riskLevels[priceResult.riskLevel];
+  const neyRisk = riskLevels[neyResult.riskLevel];
   
-  const difference = Math.abs(gannRisk - neyRisk);
+  const difference = Math.abs(priceRisk - neyRisk);
   
   // Convert difference to agreement percentage
   if (difference === 0) return 100; // Perfect agreement
@@ -55,11 +58,11 @@ export function calculateAgreement(gann: GannAnalysis, ney: NeyAnalysis): number
  * Combine risk assessments from both methodologies
  */
 export function combineRisk(
-  gann: GannAnalysis,
-  ney: NeyAnalysis
+  priceResult: PriceAnalysis,
+  neyResult: NeyAnalysis
 ): { level: "LOW" | "MODERATE" | "HIGH" | "EXTREME"; score: number } {
   // Average the risk scores
-  const avgScore = (gann.riskScore + ney.riskScore) / 2;
+  const avgScore = (priceResult.riskScore + neyResult.riskScore) / 2;
   const roundedScore = Math.round(avgScore);
   
   // Determine combined level
@@ -76,11 +79,11 @@ export function combineRisk(
  * Generate forecast scenarios
  */
 export function generateScenarios(
-  gann: GannAnalysis,
-  ney: NeyAnalysis,
+  priceResult: PriceAnalysis,
+  neyResult: NeyAnalysis,
   currentPrice: number
 ): Scenario[] {
-  const risk = combineRisk(gann, ney);
+  const risk = combineRisk(priceResult, neyResult);
   
   // Scenario probabilities based on combined analysis
   if (risk.level === "EXTREME") {
@@ -200,20 +203,20 @@ export function generateScenarios(
  * Generate trading recommendation
  */
 export function generateRecommendation(
-  gann: GannAnalysis,
-  ney: NeyAnalysis,
+  priceResult: PriceAnalysis,
+  neyResult: NeyAnalysis,
   currentPrice: number,
   squareOfNineSupport: number
 ): Recommendation {
-  const risk = combineRisk(gann, ney);
+  const risk = combineRisk(priceResult, neyResult);
   
   if (risk.level === "EXTREME") {
     return {
       action: "AVOID",
-      reasoning: "Both Gann and Ney indicate extreme risk. Price far above sustainable levels with distribution in progress.",
+      reasoning: "Both methods indicate extreme risk. Price far above sustainable levels with distribution in progress.",
     };
   } else if (risk.level === "HIGH") {
-    if (ney.currentPhase === "DISTRIBUTION") {
+    if (neyResult.currentPhase === "DISTRIBUTION") {
       return {
         action: "SELL",
         stopLoss: squareOfNineSupport,
@@ -230,18 +233,17 @@ export function generateRecommendation(
     return {
       action: "HOLD",
       stopLoss: squareOfNineSupport * 0.95,
-      target: gann.squareOfNineLevels.find(l => l.type === "resistance")?.price,
+      target: priceResult.squareOfNineLevels.find(l => l.type === "resistance")?.price,
       reasoning: "Moderate risk. Hold current positions with stop-loss at key support.",
     };
   } else {
-    // LOW risk - use Square of Nine 360° resistance as target (more realistic than sustainable price)
-    const resistanceLevels = gann.squareOfNineLevels.filter(l => l.type === "resistance");
-    // Get the highest resistance level (360° level) for primary target
+    // LOW risk - use Square of Nine 360° resistance as target
+    const resistanceLevels = priceResult.squareOfNineLevels.filter(l => l.type === "resistance");
     const targetLevel = resistanceLevels.length > 0 
       ? resistanceLevels[resistanceLevels.length - 1]?.price 
       : currentPrice * 1.25;
     
-    if (gann.rallyAngle.deviation < 0) {
+    if (priceResult.rallyAngle.deviation < 0) {
       return {
         action: "BUY",
         stopLoss: squareOfNineSupport * 0.9,
@@ -269,23 +271,23 @@ export function analyzeCombined(
   priceData: { price: number; volume: number; date: Date }[]
 ): CombinedAnalysis {
   // Perform individual analyses
-  const gann = analyzeGann(startPrice, peakPrice, days, currentPrice);
-  const ney = analyzeNey(priceData, peakPrice, currentPrice);
+  const priceResult = analyzePriceAction(startPrice, peakPrice, days, currentPrice);
+  const neyResult = analyzeNey(priceData, peakPrice, currentPrice);
   
   // Combine results
-  const risk = combineRisk(gann, ney);
-  const agreement = calculateAgreement(gann, ney);
-  const scenarios = generateScenarios(gann, ney, currentPrice);
+  const risk = combineRisk(priceResult, neyResult);
+  const agreement = calculateAgreement(priceResult, neyResult);
+  const scenarios = generateScenarios(priceResult, neyResult, currentPrice);
   
   // Find nearest support level
-  const supportLevel = gann.squareOfNineLevels.find(l => l.type === "support" && l.price < currentPrice);
-  const recommendation = generateRecommendation(gann, ney, currentPrice, supportLevel?.price || currentPrice * 0.9);
+  const supportLevel = priceResult.squareOfNineLevels.find(l => l.type === "support" && l.price < currentPrice);
+  const recommendation = generateRecommendation(priceResult, neyResult, currentPrice, supportLevel?.price || currentPrice * 0.9);
   
   const summary = `Combined analysis: ${risk.level} risk (${agreement}% agreement). ${recommendation.action}: ${recommendation.reasoning}`;
   
   return {
-    gann,
-    ney,
+    gann: priceResult,
+    ney: neyResult,
     combinedRisk: risk.level,
     combinedScore: risk.score,
     agreement,

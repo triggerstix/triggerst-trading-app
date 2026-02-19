@@ -247,17 +247,15 @@ export default function ChartView() {
         logoBase64,
       });
       
-      // Download the PDF - use FileReader to ensure blob is fully ready
-      const reader = new FileReader();
-      reader.onload = () => {
-        const a = document.createElement('a');
-        a.href = reader.result as string;
-        a.download = `${symbol}InvestmentAnalysis.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      };
-      reader.readAsDataURL(pdfBlob);
+      // Download the PDF - use blob URL for direct download
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${symbol}InvestmentAnalysis.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
       
       toast.dismiss(loadingToast);
       toast.success('Export complete!');

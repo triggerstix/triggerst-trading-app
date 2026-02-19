@@ -11,6 +11,12 @@ Building a comprehensive Trader Edition combining W.D. Gann geometric analysis w
 
 ---
 
+## Phase 49: Fix PDF Download Loop & Domain Update
+- [x] Fixed PDF download loop by replacing FileReader with blob URL approach
+- [x] Changed domain prefix from "ganntrade" to "triggerstixtrade"
+- [x] Verified single PDF download works without looping
+- [x] Tested PDF export with AAPL symbol
+
 ## Phase 1: Safeguard Infrastructure Setup
 - [x] Create CHANGELOG.md for tracking all changes
 - [x] Create session summary template (session-YYYY-MM-DD.md)
@@ -564,3 +570,23 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Verified company name appears correctly on PDF page 2 ("Apple Inc." with full profile)
 - [x] Removed all debug alert() calls from ChartView.tsx and clientPdfGenerator.ts
 - [x] Save checkpoint
+
+
+## Phase 49: Remove All "Gann" References from App
+- [ ] Audit all files for "Gann" or "gann" references
+- [ ] Remove "Gann" from page titles, browser tab, and meta tags
+- [ ] Remove "Gann" from internal variable names, comments, and type names
+- [ ] Remove "Gann" from URL paths and route definitions
+- [ ] Remove "Gann" from package.json and project metadata
+- [ ] Test app functionality after all renames
+- [ ] Save checkpoint
+
+
+## Phase 49: Remove All "Gann" References from App
+- [ ] Audit all files for "Gann" or "gann" references
+- [ ] Remove "Gann" from page titles, browser tab, and meta tags
+- [ ] Remove "Gann" from internal variable names, comments, and type names
+- [ ] Remove "Gann" from URL paths and route definitions
+- [ ] Remove "Gann" from package.json and project metadata
+- [ ] Test app functionality after all renames
+- [ ] Save checkpoint
