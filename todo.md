@@ -599,3 +599,4 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Updated watchlist button text from "Watchlist" to "Add to watchlist" / "Remove from watchlist"
 - [x] Test visibility on desktop - buttons now visible with improved styling
 - [x] Removed responsive text hiding to show History and My Watchlist text on all screen sizes
+- [x] Fixed authentication check: History/Watchlist now show on desktop with login redirect for unauthenticated users

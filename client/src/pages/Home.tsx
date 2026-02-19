@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 
 /**
  * Triggerstix - Webull-style Trading Interface
@@ -28,33 +29,47 @@ export default function Home() {
 
   const { user } = useAuth();
 
+  const handleHistoryClick = () => {
+    if (!user) {
+      window.location.href = getLoginUrl();
+    } else {
+      setLocation("/history");
+    }
+  };
+
+  const handleWatchlistClick = () => {
+    if (!user) {
+      window.location.href = getLoginUrl();
+    } else {
+      setLocation("/watchlist");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white">
       {/* Header */}
-      {user && (
-        <div className="border-b border-slate-800 bg-[#0d1129] sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-3 flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation("/history")}
-              className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
-            >
-              <Clock className="w-4 h-4" />
-              <span>History</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation("/watchlist")}
-              className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
-            >
-              <Star className="w-4 h-4" />
-              <span>My Watchlist</span>
-            </Button>
-          </div>
+      <div className="border-b border-slate-800 bg-[#0d1129] sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleHistoryClick}
+            className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
+          >
+            <Clock className="w-4 h-4" />
+            <span>History</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleWatchlistClick}
+            className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
+          >
+            <Star className="w-4 h-4" />
+            <span>My Watchlist</span>
+          </Button>
         </div>
-      )}
+      </div>
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
