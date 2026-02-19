@@ -386,12 +386,15 @@ export default function ChartView() {
                   {combinedRisk} RISK
                 </span>
               </div>
-              {/* Company Name */}
+              {/* Company Name and Beta */}
               {analysis.companyProfile?.longName && (
                 <p className="text-slate-400 text-sm mt-0.5">
                   {analysis.companyProfile.longName}
                   {analysis.companyProfile.sector && (
                     <span className="text-slate-500"> • {analysis.companyProfile.sector}</span>
+                  )}
+                  {analysis.companyProfile.beta !== undefined && (
+                    <span className="text-slate-500"> • β: {analysis.companyProfile.beta.toFixed(2)}</span>
                   )}
                 </p>
               )}
@@ -413,6 +416,16 @@ export default function ChartView() {
                   )}
                   {ohlcData ? `${ohlcData.changePercent >= 0 ? '+' : ''}${ohlcData.changePercent.toFixed(2)}%` : '0.00%'}
                 </span>
+                {analysis.companyProfile?.beta !== undefined && (
+                  <div className="flex items-center gap-2 pl-4 border-l border-slate-700">
+                    <span className="text-slate-400 text-sm">Volatility</span>
+                    <span className={`font-semibold ${
+                      analysis.companyProfile.beta > 1 ? 'text-orange-400' : 'text-green-400'
+                    }`}>
+                      Beta {analysis.companyProfile.beta.toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -15,6 +15,7 @@ export interface CompanyProfile {
   longBusinessSummary?: string;
   country?: string;
   fullTimeEmployees?: number;
+  beta?: number;
 }
 
 export interface StockQuote {
@@ -244,6 +245,10 @@ export async function getCompanyProfile(symbol: string): Promise<CompanyProfile 
     const summaryProfile = result.summaryProfile || {};
     const quoteType = result.quoteType || {};
 
+    // Get beta from summaryDetail if available
+    const summaryDetail = result.summaryDetail || {};
+    const beta = summaryDetail.beta?.raw || summaryDetail.beta?.fmt;
+
     const profile: CompanyProfile = {
       symbol: quoteType.symbol || symbol.toUpperCase(),
       shortName: quoteType.shortName || quoteType.longName || symbol.toUpperCase(),
@@ -254,6 +259,7 @@ export async function getCompanyProfile(symbol: string): Promise<CompanyProfile 
       longBusinessSummary: summaryProfile.longBusinessSummary,
       country: summaryProfile.country,
       fullTimeEmployees: summaryProfile.fullTimeEmployees,
+      beta: beta ? parseFloat(beta) : undefined,
     };
 
     return profile;

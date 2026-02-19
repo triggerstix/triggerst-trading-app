@@ -27,6 +27,7 @@ export async function getMarketData(symbol: string) {
       low: quote.regularMarketDayLow || price,
       open: quote.regularMarketOpen || price,
       volume: quote.regularMarketVolume || 0,
+      beta: quote.beta || null,
       timestamp: new Date().toISOString(),
     };
   } catch (error) {

@@ -236,6 +236,7 @@ export const appRouter = router({
             sector: companyProfile.sector,
             industry: companyProfile.industry,
             longBusinessSummary: companyProfile.longBusinessSummary,
+            beta: companyProfile.beta,
           } : null,
           chartData: historical.map(h => {
             // Use Unix timestamp for intraday data, date string for daily+

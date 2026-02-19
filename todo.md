@@ -517,3 +517,12 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Test Clear All Drawings button - working
 - [ ] Save checkpoint
 
+
+
+## Phase 45: Add Beta (β) Volatility Metric
+- [x] Add Beta field to stock data schema
+- [x] Fetch Beta data from market data API
+- [x] Display Beta on chart page with interpretation
+- [x] Add Beta to stock analysis summary
+- [x] Test Beta display with multiple stocks
+- [ ] Save checkpoint: "Beta metric added"
