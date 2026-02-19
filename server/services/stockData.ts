@@ -218,6 +218,62 @@ export function preparePriceDataForNey(historical: HistoricalDataPoint[]): Array
 
 
 /**
+ * Calculate Beta for a stock relative to S&P 500 (SPY)
+ * Beta = Covariance(stock returns, market returns) / Variance(market returns)
+ * Uses 1 year of daily returns
+ */
+export async function calculateBeta(symbol: string): Promise<number | undefined> {
+  try {
+    // Fetch 1 year of daily data for both stock and SPY (S&P 500)
+    const [stockData, marketData] = await Promise.all([
+      getHistoricalData(symbol, '1y', '1d'),
+      getHistoricalData('SPY', '1y', '1d'),
+    ]);
+
+    if (!stockData || !marketData || stockData.historical.length < 30 || marketData.historical.length < 30) {
+      return undefined;
+    }
+
+    const stockCloses = stockData.historical.map(h => h.close).filter(c => c > 0);
+    const marketCloses = marketData.historical.map(h => h.close).filter(c => c > 0);
+    const minLen = Math.min(stockCloses.length, marketCloses.length);
+
+    // Calculate daily returns
+    const stockReturns: number[] = [];
+    const marketReturns: number[] = [];
+    for (let i = 1; i < minLen; i++) {
+      if (stockCloses[i] && stockCloses[i - 1] && marketCloses[i] && marketCloses[i - 1]) {
+        stockReturns.push((stockCloses[i] - stockCloses[i - 1]) / stockCloses[i - 1]);
+        marketReturns.push((marketCloses[i] - marketCloses[i - 1]) / marketCloses[i - 1]);
+      }
+    }
+
+    if (stockReturns.length < 20) return undefined;
+
+    const n = stockReturns.length;
+    const meanStock = stockReturns.reduce((a, b) => a + b, 0) / n;
+    const meanMarket = marketReturns.reduce((a, b) => a + b, 0) / n;
+
+    let covariance = 0;
+    let varianceMarket = 0;
+    for (let i = 0; i < n; i++) {
+      covariance += (stockReturns[i] - meanStock) * (marketReturns[i] - meanMarket);
+      varianceMarket += (marketReturns[i] - meanMarket) ** 2;
+    }
+    covariance /= n;
+    varianceMarket /= n;
+
+    if (varianceMarket === 0) return undefined;
+
+    const beta = covariance / varianceMarket;
+    return Math.round(beta * 100) / 100; // Round to 2 decimal places
+  } catch (error) {
+    console.warn(`[Beta] Error calculating beta for ${symbol}:`, error);
+    return undefined;
+  }
+}
+
+/**
  * Fetch company profile information (name, description, sector, etc.)
  */
 export async function getCompanyProfile(symbol: string): Promise<CompanyProfile | null> {
@@ -245,10 +301,6 @@ export async function getCompanyProfile(symbol: string): Promise<CompanyProfile 
     const summaryProfile = result.summaryProfile || {};
     const quoteType = result.quoteType || {};
 
-    // Get beta from summaryDetail if available
-    const summaryDetail = result.summaryDetail || {};
-    const beta = summaryDetail.beta?.raw || summaryDetail.beta?.fmt;
-
     const profile: CompanyProfile = {
       symbol: quoteType.symbol || symbol.toUpperCase(),
       shortName: quoteType.shortName || quoteType.longName || symbol.toUpperCase(),
@@ -259,8 +311,14 @@ export async function getCompanyProfile(symbol: string): Promise<CompanyProfile 
       longBusinessSummary: summaryProfile.longBusinessSummary,
       country: summaryProfile.country,
       fullTimeEmployees: summaryProfile.fullTimeEmployees,
-      beta: beta ? parseFloat(beta) : undefined,
     };
+
+    // Calculate Beta from historical data (stock vs SPY)
+    try {
+      profile.beta = await calculateBeta(symbol.toUpperCase());
+    } catch (e) {
+      console.warn(`[Beta] Could not calculate beta for ${symbol}:`, e);
+    }
 
     return profile;
   } catch (error) {

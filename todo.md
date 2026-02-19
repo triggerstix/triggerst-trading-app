@@ -525,4 +525,4 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Display Beta on chart page with interpretation
 - [x] Add Beta to stock analysis summary
 - [x] Test Beta display with multiple stocks
-- [ ] Save checkpoint: "Beta metric added"
+- [x] Save checkpoint: "Beta metric added"
