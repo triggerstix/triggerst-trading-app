@@ -526,3 +526,12 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Add Beta to stock analysis summary
 - [x] Test Beta display with multiple stocks
 - [x] Save checkpoint: "Beta metric added"
+
+
+## Phase 45: Fix Drawing Tools - Real Diagonal Trendlines
+- [ ] Remove duplicate click handler (container click + chart subscribeClick)
+- [ ] Add canvas overlay for diagonal trendline rendering
+- [ ] Convert trendline start/end to pixel coords using timeToCoordinate/priceToCoordinate
+- [ ] Redraw canvas on chart scroll/zoom
+- [ ] Test trendline, horizontal line, and fibonacci
+- [ ] Save checkpoint

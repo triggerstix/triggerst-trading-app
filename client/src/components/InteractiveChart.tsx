@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
 import { Pencil, TrendingUp, Trash2, Minus, MousePointer2, Type, Ruler, ZoomIn, ZoomOut, Crosshair, BarChart3, Activity } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
@@ -24,6 +24,14 @@ interface InteractiveChartProps {
   ohlc?: { open: number; high: number; low: number; close: number; change: number; changePercent: number; volume: number };
 }
 
+interface Drawing {
+  type: 'trendline' | 'horizontal' | 'fibonacci';
+  start?: { time: string | number; price: number };
+  end?: { time: string | number; price: number };
+  price?: number;
+  color?: string;
+}
+
 export default function InteractiveChart({ 
   data, 
   symbol, 
@@ -40,6 +48,7 @@ export default function InteractiveChart({
   const volumeSeriesRef = useRef<any>(null);
   const drawingSeriesRef = useRef<any[]>([]);
   const priceLineRefs = useRef<any[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [showVolume, setShowVolume] = useState(true);
   const [internalTimeframe, setInternalTimeframe] = useState<'1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | '5Y'>('1Y');
   const timeframe = externalTimeframe ?? internalTimeframe;
@@ -49,7 +58,8 @@ export default function InteractiveChart({
   };
   const [drawingMode, setDrawingMode] = useState<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
   const drawingModeRef = useRef<'none' | 'trendline' | 'fibonacci' | 'horizontal'>('none');
-  const [drawings, setDrawings] = useState<any[]>([]);
+  const [drawings, setDrawings] = useState<Drawing[]>([]);
+  const drawingsRef = useRef<Drawing[]>([]);
   const [drawingStart, setDrawingStart] = useState<{ time: string | number; price: number } | null>(null);
   const drawingStartRef = useRef<{ time: string | number; price: number } | null>(null);
 
@@ -61,6 +71,10 @@ export default function InteractiveChart({
   useEffect(() => {
     drawingStartRef.current = drawingStart;
   }, [drawingStart]);
+
+  useEffect(() => {
+    drawingsRef.current = drawings;
+  }, [drawings]);
   
   // SMA overlay states
   const [showSMA20, setShowSMA20] = useState(false);
@@ -105,11 +119,76 @@ export default function InteractiveChart({
 
     const timeoutId = setTimeout(() => {
       saveDrawingsMutation.mutate({ symbol, drawings });
-    }, 1000); // Debounce 1 second
+    }, 1000);
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawings, symbol, user]);
+
+  // Canvas overlay drawing function
+  const redrawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const chart = chartRef.current;
+    const series = candlestickSeriesRef.current;
+    if (!canvas || !chart || !series) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Match canvas size to chart container
+    const container = chartContainerRef.current;
+    if (!container) return;
+    
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+    ctx.scale(dpr, dpr);
+
+    // Clear canvas
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    const currentDrawings = drawingsRef.current;
+
+    currentDrawings.forEach(drawing => {
+      if (drawing.type === 'trendline' && drawing.start && drawing.end) {
+        // Convert time/price to pixel coordinates
+        const x1 = chart.timeScale().timeToCoordinate(drawing.start.time as Time);
+        const y1 = series.priceToCoordinate(drawing.start.price);
+        const x2 = chart.timeScale().timeToCoordinate(drawing.end.time as Time);
+        const y2 = series.priceToCoordinate(drawing.end.price);
+
+        if (x1 === null || y1 === null || x2 === null || y2 === null) return;
+
+        // Draw the diagonal trendline
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = drawing.color || '#06b6d4';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw start and end dots
+        ctx.beginPath();
+        ctx.arc(x1, y1, 4, 0, Math.PI * 2);
+        ctx.fillStyle = drawing.color || '#06b6d4';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x2, y2, 4, 0, Math.PI * 2);
+        ctx.fillStyle = drawing.color || '#06b6d4';
+        ctx.fill();
+
+        // Draw price labels
+        ctx.font = '11px sans-serif';
+        ctx.fillStyle = drawing.color || '#06b6d4';
+        ctx.fillText(`$${drawing.start.price.toFixed(2)}`, x1 + 6, y1 - 6);
+        ctx.fillText(`$${drawing.end.price.toFixed(2)}`, x2 + 6, y2 - 6);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -181,10 +260,9 @@ export default function InteractiveChart({
       priceFormat: {
         type: 'volume',
       },
-      priceScaleId: '', // set as overlay
+      priceScaleId: '',
     });
 
-    // Configure volume series positioning (v5 API)
     volumeSeries.priceScale().applyOptions({
       scaleMargins: {
         top: 0.8,
@@ -218,8 +296,6 @@ export default function InteractiveChart({
       return smaData;
     };
 
-    // Add SMA series
-    
     // SMA 20 (yellow)
     const sma20Series = chart.addSeries(LineSeries, {
       color: '#fbbf24',
@@ -267,17 +343,14 @@ export default function InteractiveChart({
       
       for (let i = 0; i < data.length; i++) {
         if (i < period - 1) {
-          // Not enough data yet, skip
           continue;
         } else if (i === period - 1) {
-          // First EMA is SMA
           let sum = 0;
           for (let j = 0; j < period; j++) {
             sum += data[i - j].close;
           }
           ema = sum / period;
         } else {
-          // EMA = (Close - Previous EMA) * multiplier + Previous EMA
           ema = (data[i].close - ema) * multiplier + ema;
         }
         emaData.push({
@@ -288,8 +361,6 @@ export default function InteractiveChart({
       return emaData;
     };
 
-    // Add EMA series
-    
     // EMA 12 (cyan/teal)
     const ema12Series = chart.addSeries(LineSeries, {
       color: '#06b6d4',
@@ -355,30 +426,47 @@ export default function InteractiveChart({
         chartRef.current.applyOptions({
           width: chartContainerRef.current.clientWidth,
         });
+        // Redraw canvas overlay on resize
+        requestAnimationFrame(redrawCanvas);
       }
     };
 
     window.addEventListener('resize', handleResize);
 
-    // Drawing functionality
+    // Redraw canvas on scroll/zoom
+    chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+      requestAnimationFrame(redrawCanvas);
+    });
+
+    // Drawing click handler (only use chart.subscribeClick, no duplicate)
     const handleChartClick = (param: any) => {
       const currentMode = drawingModeRef.current;
-      console.log('Chart clicked, drawing mode:', currentMode, 'param:', param);
-      if (currentMode === 'none' || !param.point) {
-        console.log('Skipping - mode is none or no point');
-        return;
-      }
+      if (currentMode === 'none' || !param.point) return;
 
       const price = candlestickSeries.coordinateToPrice(param.point.y);
-      if (price === null) return; // Guard against null price
-      const time = param.time;
+      if (price === null) return;
+      let time = param.time;
+
+      // If no time from click (clicked between candles or in empty area),
+      // find the nearest data point time using the x coordinate
+      if (!time && param.point && data.length > 0) {
+        const logical = chart.timeScale().coordinateToLogical(param.point.x);
+        if (logical !== null) {
+          const idx = Math.max(0, Math.min(Math.round(logical), data.length - 1));
+          time = data[idx]?.time;
+        }
+        // Fallback: use nearest data point time
+        if (!time) {
+          time = data[Math.floor(data.length / 2)]?.time;
+        }
+      }
 
       // Horizontal line only needs one click
       if (currentMode === 'horizontal') {
-        const newDrawing = {
+        const newDrawing: Drawing = {
           type: 'horizontal',
           price,
-          color: '#fbbf24', // Default yellow/gold color
+          color: '#fbbf24',
         };
         setDrawings(prev => [...prev, newDrawing]);
         setDrawingMode('none');
@@ -386,15 +474,13 @@ export default function InteractiveChart({
       }
 
       // Trendline and Fibonacci need two clicks
-      if (!param.time) return;
+      if (!time) return;
 
       const currentStart = drawingStartRef.current;
       if (!currentStart) {
-        // First click - start drawing
         setDrawingStart({ time, price });
       } else {
-        // Second click - complete drawing
-        const newDrawing = {
+        const newDrawing: Drawing = {
           type: currentMode,
           start: currentStart,
           end: { time, price },
@@ -407,63 +493,9 @@ export default function InteractiveChart({
 
     chart.subscribeClick(handleChartClick);
 
-    // Also add direct click handler as fallback
-    const handleContainerClick = (e: MouseEvent) => {
-      const currentMode = drawingModeRef.current;
-      console.log('Container clicked, drawing mode:', currentMode);
-      if (currentMode === 'none') return;
-      
-      const rect = chartContainerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      // Convert coordinates to price/time
-      const price = candlestickSeries.coordinateToPrice(y);
-      const time = chart.timeScale().coordinateToTime(x);
-      
-      console.log('Container click - x:', x, 'y:', y, 'price:', price, 'time:', time);
-      
-      if (price === null) return;
-      
-      // Horizontal line only needs one click
-      if (currentMode === 'horizontal') {
-        const newDrawing = {
-          type: 'horizontal',
-          price,
-          color: '#fbbf24',
-        };
-        setDrawings(prev => [...prev, newDrawing]);
-        setDrawingMode('none');
-        return;
-      }
-      
-      // Trendline and Fibonacci need two clicks
-      if (!time) return;
-      
-      const currentStart = drawingStartRef.current;
-      if (!currentStart) {
-        // Store time as-is (can be string or number depending on chart format)
-        setDrawingStart({ time: time as string | number, price });
-      } else {
-        const newDrawing = {
-          type: currentMode,
-          start: currentStart,
-          end: { time: time as string | number, price },
-        };
-        setDrawings(prev => [...prev, newDrawing]);
-        setDrawingStart(null);
-        setDrawingMode('none');
-      }
-    };
-    
-    chartContainerRef.current?.addEventListener('click', handleContainerClick);
-
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.unsubscribeClick(handleChartClick);
-      chartContainerRef.current?.removeEventListener('click', handleContainerClick);
       chart.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -481,7 +513,6 @@ export default function InteractiveChart({
   useEffect(() => {
     if (!showRSI || !rsiContainerRef.current || data.length < 14) return;
 
-    // Calculate RSI
     const calculateRSI = (period: number = 14) => {
       const rsiData: { time: Time; value: number }[] = [];
       let gains = 0, losses = 0;
@@ -525,7 +556,6 @@ export default function InteractiveChart({
     });
     rsiSeries.setData(calculateRSI());
 
-    // Add overbought/oversold lines
     rsiSeries.createPriceLine({ price: 70, color: '#ef4444', lineWidth: 1, lineStyle: 2 });
     rsiSeries.createPriceLine({ price: 30, color: '#10b981', lineWidth: 1, lineStyle: 2 });
 
@@ -536,7 +566,6 @@ export default function InteractiveChart({
   useEffect(() => {
     if (!showMACD || !macdContainerRef.current || data.length < 26) return;
 
-    // Calculate EMA
     const calculateEMA = (period: number, prices: number[]) => {
       const k = 2 / (period + 1);
       const ema: number[] = [prices[0]];
@@ -588,20 +617,11 @@ export default function InteractiveChart({
     return () => { macdChart.remove(); };
   }, [showMACD, data]);
 
-  // Render drawings
+  // Render drawings (horizontal lines and fibonacci via price lines, trendlines via canvas)
   useEffect(() => {
     if (!candlestickSeriesRef.current || !chartRef.current) return;
 
-    // Clean up previous drawings to prevent duplicates
-    drawingSeriesRef.current.forEach(series => {
-      try {
-        chartRef.current?.removeSeries(series);
-      } catch (e) {
-        // Series may already be removed
-      }
-    });
-    drawingSeriesRef.current = [];
-
+    // Clean up previous price lines
     priceLineRefs.current.forEach(priceLine => {
       try {
         candlestickSeriesRef.current?.removePriceLine(priceLine);
@@ -613,9 +633,8 @@ export default function InteractiveChart({
 
     drawings.forEach(drawing => {
       if (drawing.type === 'horizontal') {
-        // Draw horizontal line
         const priceLine = candlestickSeriesRef.current.createPriceLine({
-          price: drawing.price,
+          price: drawing.price!,
           color: drawing.color || '#fbbf24',
           lineWidth: 2,
           lineStyle: 0,
@@ -623,35 +642,7 @@ export default function InteractiveChart({
           title: 'H-Line',
         });
         priceLineRefs.current.push(priceLine);
-      } else if (drawing.type === 'trendline') {
-        // For trendlines, we'll draw two horizontal price lines at start and end prices
-        // This is a workaround since lightweight-charts line series has strict time ordering requirements
-        const startPrice = drawing.start.price;
-        const endPrice = drawing.end.price;
-        
-        // Create a price line at the start price
-        const startLine = candlestickSeriesRef.current.createPriceLine({
-          price: startPrice,
-          color: '#06b6d4',
-          lineWidth: 1,
-          lineStyle: 2, // Dashed
-          axisLabelVisible: true,
-          title: 'T-Start',
-        });
-        priceLineRefs.current.push(startLine);
-        
-        // Create a price line at the end price
-        const endLine = candlestickSeriesRef.current.createPriceLine({
-          price: endPrice,
-          color: '#06b6d4',
-          lineWidth: 1,
-          lineStyle: 2, // Dashed
-          axisLabelVisible: true,
-          title: 'T-End',
-        });
-        priceLineRefs.current.push(endLine);
-      } else if (drawing.type === 'fibonacci') {
-        // Draw Fibonacci retracement levels
+      } else if (drawing.type === 'fibonacci' && drawing.start && drawing.end) {
         const high = Math.max(drawing.start.price, drawing.end.price);
         const low = Math.min(drawing.start.price, drawing.end.price);
         const diff = high - low;
@@ -678,8 +669,12 @@ export default function InteractiveChart({
           priceLineRefs.current.push(priceLine);
         });
       }
+      // Trendlines are rendered on the canvas overlay (handled by redrawCanvas)
     });
-  }, [drawings]);
+
+    // Redraw canvas for trendlines
+    requestAnimationFrame(redrawCanvas);
+  }, [drawings, redrawCanvas]);
 
   return (
     <div className="relative flex">
@@ -765,7 +760,7 @@ export default function InteractiveChart({
       <div className="flex-1 relative">
         {/* OHLC Header - Webull style */}
         {ohlc && (
-          <div className="bg-slate-900/95 border-b border-slate-700 px-3 py-2">
+          <div className={`bg-slate-900/95 border-b border-slate-700 px-3 py-2 ${drawingMode !== 'none' ? 'pointer-events-none' : ''}`}>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-white font-semibold">{symbol}</span>
               <span className="text-slate-400">O</span>
@@ -784,8 +779,27 @@ export default function InteractiveChart({
             </div>
           </div>
         )}
+        {/* Drawing mode indicator */}
+        {drawingMode !== 'none' && (
+          <div className="absolute top-2 right-2 z-20 bg-slate-800/90 border border-slate-600 rounded px-3 py-1.5 text-xs text-white flex items-center gap-2 pointer-events-auto">
+            <span className={`w-2 h-2 rounded-full animate-pulse ${
+              drawingMode === 'trendline' ? 'bg-cyan-400' :
+              drawingMode === 'horizontal' ? 'bg-yellow-400' :
+              'bg-purple-400'
+            }`} />
+            {drawingMode === 'trendline' && (drawingStart ? 'Click to set end point' : 'Click to set start point')}
+            {drawingMode === 'horizontal' && 'Click to place horizontal line'}
+            {drawingMode === 'fibonacci' && (drawingStart ? 'Click to set end point' : 'Click to set start point')}
+            <button 
+              onClick={() => { setDrawingMode('none'); setDrawingStart(null); }}
+              className="ml-2 text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {/* Top toolbar - Timeframe and indicators */}
-        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1" style={{ top: ohlc ? '48px' : '8px' }}>
+        <div className={`absolute top-2 left-2 z-10 flex flex-col gap-1 ${drawingMode !== 'none' ? 'pointer-events-none opacity-50' : ''}`} style={{ top: ohlc ? '48px' : '8px' }}>
           {/* Timeframe buttons */}
           <div className="flex gap-1">
             {(['1D', '1W', '1M', '3M', '6M', '1Y', '5Y'] as const).map(tf => (
@@ -802,7 +816,7 @@ export default function InteractiveChart({
               </button>
             ))}
           </div>
-          {/* SMA and EMA indicators - stacked below timeframe */}
+          {/* SMA and EMA indicators */}
           <div className="flex gap-1">
             <button
               onClick={() => {
@@ -867,7 +881,16 @@ export default function InteractiveChart({
             </button>
           </div>
         </div>
-        <div ref={chartContainerRef} data-chart-container className="w-full flex-1" style={{ minHeight: showRSI || showMACD ? 'calc(100% - 220px)' : '100%' }} />
+        {/* Chart container with canvas overlay */}
+        <div className="relative">
+          <div ref={chartContainerRef} data-chart-container className="w-full flex-1" style={{ minHeight: showRSI || showMACD ? 'calc(100% - 220px)' : '100%' }} />
+          {/* Canvas overlay for trendlines */}
+          <canvas
+            ref={canvasRef}
+            className="absolute top-0 left-0 w-full h-full pointer-events-none"
+            style={{ zIndex: 5 }}
+          />
+        </div>
         
         {/* RSI Indicator Pane */}
         {showRSI && (
