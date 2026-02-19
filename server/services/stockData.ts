@@ -299,12 +299,27 @@ export async function getCompanyProfile(symbol: string): Promise<CompanyProfile 
     }
 
     const summaryProfile = result.summaryProfile || {};
-    const quoteType = result.quoteType || {};
+
+    // The profile API doesn't return quoteType/longName, so fetch from chart API
+    let shortName = symbol.toUpperCase();
+    let longName = symbol.toUpperCase();
+    try {
+      const chartResponse: any = await callDataApi("YahooFinance/get_stock_chart", {
+        query: { symbol: symbol.toUpperCase(), region: "US", interval: "1d", range: "1d" },
+      });
+      const chartMeta = chartResponse?.chart?.result?.[0]?.meta;
+      if (chartMeta) {
+        shortName = chartMeta.shortName || chartMeta.longName || symbol.toUpperCase();
+        longName = chartMeta.longName || chartMeta.shortName || symbol.toUpperCase();
+      }
+    } catch (e) {
+      console.warn(`[Profile] Could not fetch chart meta for ${symbol}:`, e);
+    }
 
     const profile: CompanyProfile = {
-      symbol: quoteType.symbol || symbol.toUpperCase(),
-      shortName: quoteType.shortName || quoteType.longName || symbol.toUpperCase(),
-      longName: quoteType.longName || quoteType.shortName || symbol.toUpperCase(),
+      symbol: symbol.toUpperCase(),
+      shortName,
+      longName,
       sector: summaryProfile.sector,
       industry: summaryProfile.industry,
       website: summaryProfile.website,

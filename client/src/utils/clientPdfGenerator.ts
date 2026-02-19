@@ -1,7 +1,7 @@
 /**
  * Client-side PDF Generator using jsPDF
  * Generates polished 2-page Investment Analysis PDF
- * Color scheme: White, Black, Shades of Grey, Blue
+ * Color scheme: White, Black, Shades of Grey, Blue accents
  * Font: Helvetica (closest to Arial in jsPDF)
  */
 
@@ -50,17 +50,20 @@ interface AnalysisData {
 
 // Color palette
 const WHITE = [255, 255, 255] as const;
-const BLACK = [0, 0, 0] as const;
-const DARK_GREY = [51, 51, 51] as const;
-const MED_GREY = [102, 102, 102] as const;
-const LIGHT_GREY = [153, 153, 153] as const;
-const LIGHTER_GREY = [204, 204, 204] as const;
-const LIGHTEST_GREY = [240, 240, 240] as const;
-const PRIMARY_BLUE = [0, 102, 204] as const;
-const DARK_BLUE = [0, 51, 102] as const;
-const LIGHT_BLUE = [230, 242, 255] as const;
-const GREEN = [0, 153, 76] as const;
-const RED = [204, 0, 0] as const;
+const BLACK = [30, 30, 30] as const;
+const DARK_GREY = [60, 60, 60] as const;
+const MED_GREY = [110, 110, 110] as const;
+const LIGHT_GREY = [160, 160, 160] as const;
+const LIGHTER_GREY = [210, 210, 210] as const;
+const LIGHTEST_GREY = [243, 243, 243] as const;
+const PRIMARY_BLUE = [0, 90, 180] as const;
+const DARK_BLUE = [15, 35, 65] as const;
+const ACCENT_BLUE = [40, 120, 210] as const;
+const GREEN = [16, 140, 70] as const;
+const RED = [190, 30, 30] as const;
+const AMBER = [180, 120, 0] as const;
+
+type RGB = readonly [number, number, number];
 
 export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
   const {
@@ -75,16 +78,15 @@ export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
     agreement,
     combinedRisk,
     companyProfile,
-    peakPrice = currentPrice,
     startPrice = currentPrice,
     chartImageBase64,
     logoBase64,
   } = data;
 
-  const dateStr = new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', month: 'long', day: 'numeric' 
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
   });
-  
+
   const targetPrice = recommendation.target || (currentPrice * 1.15);
   const stopLoss = recommendation.stopLoss || (startPrice * 0.85);
   const sustainablePrice = gann.rallyAngle.sustainablePrice;
@@ -93,8 +95,8 @@ export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
   const upside = ((targetPrice - currentPrice) / currentPrice * 100).toFixed(1);
   const downside = ((currentPrice - stopLoss) / currentPrice * 100).toFixed(1);
   const riskReward = ((targetPrice - currentPrice) / (currentPrice - stopLoss)).toFixed(2);
-  
-  const displayName = companyName || companyProfile?.longName || symbol;
+
+  const displayName = companyName || companyProfile?.longName || companyProfile?.shortName || symbol;
   const sector = companyProfile?.sector || 'N/A';
   const industry = companyProfile?.industry || 'N/A';
   const businessSummary = companyProfile?.longBusinessSummary || '';
@@ -107,12 +109,18 @@ export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
 
   const pw = doc.internal.pageSize.getWidth();  // ~792
   const ph = doc.internal.pageSize.getHeight(); // ~612
-  const m = 30; // margin
+  const m = 32; // margin
 
-  const getActionColor = (action: string): readonly [number, number, number] => {
+  const getActionColor = (action: string): RGB => {
     if (action === 'BUY') return GREEN;
     if (action === 'SELL') return RED;
-    return MED_GREY;
+    return AMBER;
+  };
+
+  const getRiskColor = (risk: string): RGB => {
+    if (risk === 'LOW') return GREEN;
+    if (risk === 'HIGH') return RED;
+    return AMBER;
   };
 
   const drawPageBg = () => {
@@ -123,448 +131,466 @@ export async function generateClientPdf(data: AnalysisData): Promise<Blob> {
   const drawFooter = (pageNum: number) => {
     doc.setDrawColor(...LIGHTER_GREY);
     doc.setLineWidth(0.5);
-    doc.line(m, ph - 25, pw - m, ph - 25);
-    doc.setFontSize(7);
+    doc.line(m, ph - 28, pw - m, ph - 28);
+    doc.setFontSize(6.5);
     doc.setTextColor(...LIGHT_GREY);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Triggerstix Investment Analysis  •  For informational purposes only  •  Not investment advice', m, ph - 12);
-    doc.text(`Page ${pageNum} of 2`, pw - m, ph - 12, { align: 'right' });
+    doc.setFont('helvetica', 'italic');
+    doc.text('Triggerstix Investment Analysis  |  For informational purposes only  |  Not investment advice', m, ph - 14);
+    doc.text(`Page ${pageNum} of 2`, pw - m, ph - 14, { align: 'right' });
   };
 
   // ═══════════════════════════════════════════════════════
-  // PAGE 1: Header + Signal + Key Metrics + Chart + Analysis
+  // PAGE 1: ANALYSIS DASHBOARD
   // ═══════════════════════════════════════════════════════
   drawPageBg();
 
-  // ── Top bar: dark blue with ticker, name, date ──
+  // ── Header bar ──
   doc.setFillColor(...DARK_BLUE);
-  doc.rect(0, 0, pw, 55, 'F');
+  doc.rect(0, 0, pw, 50, 'F');
 
-  // Logo placeholder or actual logo
-  if (logoBase64) {
-    try { doc.addImage(logoBase64, 'PNG', m, 6, 42, 42); } catch {}
-  }
-  const nameX = logoBase64 ? m + 50 : m;
-
-  doc.setFontSize(22);
+  // Left: Ticker + Company Name (single line, no duplication)
+  const headerTextX = m;
+  doc.setFontSize(18);
   doc.setTextColor(...WHITE);
   doc.setFont('helvetica', 'bold');
-  doc.text(symbol, nameX, 25);
-
-  doc.setFontSize(11);
+  doc.text(symbol, headerTextX, 22);
+  // Company name next to ticker in lighter weight
+  const tickerWidth = doc.getTextWidth(symbol);
+  doc.setFontSize(14);
+  doc.setTextColor(200, 215, 230);
   doc.setFont('helvetica', 'normal');
-  doc.text(displayName, nameX, 42);
+  doc.text(displayName !== symbol ? displayName : '', headerTextX + tickerWidth + 12, 22);
 
-  // Right side: date + sector
-  doc.setFontSize(10);
-  doc.text(dateStr, pw - m, 22, { align: 'right' });
+  // Subtitle: sector + industry
   doc.setFontSize(9);
-  doc.setTextColor(...LIGHTER_GREY);
-  doc.text(`${sector}  •  ${industry}`, pw - m, 38, { align: 'right' });
+  doc.setTextColor(180, 200, 220);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${sector}  |  ${industry}`, headerTextX, 40);
 
-  // ── Signal badge + Price row ──
-  let y = 72;
+  // Right: date
+  doc.setFontSize(9);
+  doc.setTextColor(180, 200, 220);
+  doc.text(dateStr, pw - m, 22, { align: 'right' });
+
+  // Right: Triggerstix branding
+  doc.setFontSize(8);
+  doc.setTextColor(120, 150, 180);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Triggerstix Analysis', pw - m, 40, { align: 'right' });
+
+  // ── Signal + Price + Key Metrics bar ──
+  let y = 62;
   const actionColor = getActionColor(recommendation.action);
 
-  // Action badge
+  // Signal badge
   doc.setFillColor(actionColor[0], actionColor[1], actionColor[2]);
-  doc.roundedRect(m, y - 14, 70, 28, 4, 4, 'F');
-  doc.setFontSize(16);
+  doc.roundedRect(m, y, 60, 24, 3, 3, 'F');
+  doc.setFontSize(14);
   doc.setTextColor(...WHITE);
   doc.setFont('helvetica', 'bold');
-  doc.text(recommendation.action, m + 35, y + 4, { align: 'center' });
+  doc.text(recommendation.action, m + 30, y + 16, { align: 'center' });
 
   // Current price
-  doc.setFontSize(28);
+  doc.setFontSize(24);
   doc.setTextColor(...BLACK);
-  doc.text(`$${currentPrice.toFixed(2)}`, m + 82, y + 5);
+  doc.text(`$${currentPrice.toFixed(2)}`, m + 72, y + 18);
 
-  // Key metrics inline
-  const metricStartX = m + 220;
-  const inlineMetrics = [
-    { label: 'Risk', value: combinedRisk, color: combinedRisk === 'LOW' ? GREEN : combinedRisk === 'HIGH' ? RED : MED_GREY },
-    { label: 'Agreement', value: `${agreement}%`, color: agreement >= 80 ? GREEN : MED_GREY },
+  // Inline metrics
+  const metricStartX = m + 200;
+  const metrics = [
+    { label: 'Risk', value: combinedRisk, color: getRiskColor(combinedRisk) },
+    { label: 'Agreement', value: `${agreement}%`, color: agreement >= 80 ? GREEN : AMBER },
     { label: 'Target', value: `$${targetPrice.toFixed(2)}`, color: GREEN },
-    { label: 'Stop', value: `$${stopLoss.toFixed(2)}`, color: RED },
-    { label: 'R/R', value: `${riskReward}:1`, color: parseFloat(riskReward) >= 2 ? GREEN : MED_GREY },
-    { label: '52W H', value: `$${high52Week.toFixed(2)}`, color: DARK_GREY },
-    { label: '52W L', value: `$${low52Week.toFixed(2)}`, color: DARK_GREY },
+    { label: 'Stop Loss', value: `$${stopLoss.toFixed(2)}`, color: RED },
+    { label: 'R/R Ratio', value: `${riskReward}:1`, color: parseFloat(riskReward) >= 2 ? GREEN : AMBER },
+    { label: '52W High', value: `$${high52Week.toFixed(2)}`, color: DARK_GREY },
+    { label: '52W Low', value: `$${low52Week.toFixed(2)}`, color: DARK_GREY },
   ];
 
-  inlineMetrics.forEach((met, i) => {
-    const x = metricStartX + i * 75;
-    doc.setFontSize(7);
+  const metricSpacing = (pw - m - metricStartX) / metrics.length;
+  metrics.forEach((met, i) => {
+    const x = metricStartX + i * metricSpacing;
+    doc.setFontSize(6.5);
     doc.setTextColor(...MED_GREY);
     doc.setFont('helvetica', 'normal');
-    doc.text(met.label, x, y - 6);
-    doc.setFontSize(11);
+    doc.text(met.label.toUpperCase(), x, y + 5);
+    doc.setFontSize(10);
     doc.setTextColor(met.color[0], met.color[1], met.color[2]);
     doc.setFont('helvetica', 'bold');
-    doc.text(met.value, x, y + 6);
+    doc.text(met.value, x, y + 18);
   });
 
   // ── Thin separator ──
-  y = 105;
+  y = 94;
   doc.setDrawColor(...LIGHTER_GREY);
   doc.setLineWidth(0.5);
   doc.line(m, y, pw - m, y);
 
   // ── Two-column layout: Left = Chart, Right = Analysis ──
-  const leftColW = (pw - 3 * m) * 0.55;
-  const rightColW = (pw - 3 * m) * 0.45;
-  const rightX = m + leftColW + m;
-  const contentTop = y + 10;
+  const colGap = 24;
+  const leftColW = (pw - 2 * m - colGap) * 0.56;
+  const rightColW = (pw - 2 * m - colGap) * 0.44;
+  const rightX = m + leftColW + colGap;
+  const contentTop = y + 8;
 
   // LEFT: Chart image
-  const chartH = 280;
+  const chartH = 265;
   if (chartImageBase64) {
     try {
       doc.setDrawColor(...LIGHTER_GREY);
       doc.setLineWidth(0.5);
-      doc.roundedRect(m, contentTop, leftColW, chartH, 3, 3, 'D');
-      doc.addImage(chartImageBase64, 'PNG', m + 2, contentTop + 2, leftColW - 4, chartH - 4);
+      doc.roundedRect(m, contentTop, leftColW, chartH, 2, 2, 'D');
+      doc.addImage(chartImageBase64, 'PNG', m + 1, contentTop + 1, leftColW - 2, chartH - 2);
     } catch {
       doc.setFillColor(...LIGHTEST_GREY);
-      doc.roundedRect(m, contentTop, leftColW, chartH, 3, 3, 'F');
-      doc.setFontSize(11);
+      doc.roundedRect(m, contentTop, leftColW, chartH, 2, 2, 'F');
+      doc.setFontSize(10);
       doc.setTextColor(...MED_GREY);
-      doc.text(`${symbol} Price Chart`, m + leftColW / 2, contentTop + chartH / 2, { align: 'center' });
+      doc.text('Price Chart', m + leftColW / 2, contentTop + chartH / 2, { align: 'center' });
     }
   } else {
     doc.setFillColor(...LIGHTEST_GREY);
-    doc.roundedRect(m, contentTop, leftColW, chartH, 3, 3, 'F');
-    doc.setFontSize(11);
+    doc.roundedRect(m, contentTop, leftColW, chartH, 2, 2, 'F');
+    doc.setFontSize(10);
     doc.setTextColor(...MED_GREY);
-    doc.text(`${symbol} Price Chart`, m + leftColW / 2, contentTop + chartH / 2, { align: 'center' });
+    doc.text('Price Chart', m + leftColW / 2, contentTop + chartH / 2, { align: 'center' });
   }
 
-  // RIGHT: Price Analysis + Market Phase
-  let ry = contentTop + 5;
+  // RIGHT COLUMN: Analysis sections
+  let ry = contentTop;
 
-  // Price Sustainability section
-  doc.setFontSize(10);
+  // ── Price Sustainability ──
+  doc.setFontSize(9);
   doc.setTextColor(...PRIMARY_BLUE);
   doc.setFont('helvetica', 'bold');
-  doc.text('PRICE SUSTAINABILITY', rightX, ry);
-  doc.setDrawColor(...PRIMARY_BLUE);
+  doc.text('PRICE SUSTAINABILITY', rightX, ry + 10);
+  doc.setDrawColor(...ACCENT_BLUE);
   doc.setLineWidth(1.5);
-  doc.line(rightX, ry + 4, rightX + 120, ry + 4);
+  doc.line(rightX, ry + 14, rightX + 115, ry + 14);
 
-  ry += 20;
+  ry += 26;
+  const deviation = ((currentPrice - sustainablePrice) / sustainablePrice * 100).toFixed(1);
   const priceRows = [
     { label: 'Sustainable Price', value: `$${sustainablePrice.toFixed(2)}` },
     { label: 'Current Price', value: `$${currentPrice.toFixed(2)}` },
-    { label: 'Deviation', value: `${((currentPrice - sustainablePrice) / sustainablePrice * 100).toFixed(1)}%` },
+    { label: 'Deviation', value: `${deviation}%` },
     { label: 'Risk Level', value: gann.rallyAngle.riskLevel },
   ];
 
   priceRows.forEach((row) => {
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(...MED_GREY);
     doc.setFont('helvetica', 'normal');
     doc.text(row.label, rightX, ry);
     doc.setTextColor(...BLACK);
     doc.setFont('helvetica', 'bold');
-    doc.text(row.value, rightX + rightColW - 5, ry, { align: 'right' });
-    ry += 16;
+    doc.text(row.value, rightX + rightColW, ry, { align: 'right' });
+    ry += 15;
   });
 
-  // Market Phase section
-  ry += 8;
-  doc.setFontSize(10);
+  // ── Market Phase ──
+  ry += 6;
+  doc.setFontSize(9);
   doc.setTextColor(...PRIMARY_BLUE);
   doc.setFont('helvetica', 'bold');
   doc.text('MARKET PHASE', rightX, ry);
-  doc.setDrawColor(...PRIMARY_BLUE);
-  doc.line(rightX, ry + 4, rightX + 90, ry + 4);
+  doc.setDrawColor(...ACCENT_BLUE);
+  doc.line(rightX, ry + 4, rightX + 85, ry + 4);
 
-  ry += 18;
-  doc.setFillColor(...LIGHT_BLUE);
-  doc.roundedRect(rightX, ry, rightColW, 40, 3, 3, 'F');
-  doc.setFontSize(14);
+  ry += 14;
+  doc.setFillColor(235, 245, 255);
+  doc.roundedRect(rightX, ry, rightColW, 42, 3, 3, 'F');
+  doc.setFontSize(13);
   doc.setTextColor(...PRIMARY_BLUE);
   doc.setFont('helvetica', 'bold');
-  doc.text(ney.phase, rightX + 10, ry + 17);
-  doc.setFontSize(8);
-  doc.setTextColor(...MED_GREY);
+  doc.text(ney.phase, rightX + 10, ry + 16);
+  doc.setFontSize(7.5);
+  doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'normal');
-  const phaseDesc = getPhaseDescription(ney.phase).substring(0, 120) + '...';
+  const phaseDesc = getPhaseDescription(ney.phase);
   const phaseLines = doc.splitTextToSize(phaseDesc, rightColW - 20);
   doc.text(phaseLines.slice(0, 2), rightX + 10, ry + 30);
 
-  // Method Agreement section
-  ry += 55;
-  doc.setFontSize(10);
+  // ── Method Agreement ──
+  ry += 54;
+  doc.setFontSize(9);
   doc.setTextColor(...PRIMARY_BLUE);
   doc.setFont('helvetica', 'bold');
   doc.text('METHOD AGREEMENT', rightX, ry);
-  doc.setDrawColor(...PRIMARY_BLUE);
-  doc.line(rightX, ry + 4, rightX + 120, ry + 4);
+  doc.setDrawColor(...ACCENT_BLUE);
+  doc.line(rightX, ry + 4, rightX + 110, ry + 4);
 
-  ry += 18;
-  // Mini table
+  ry += 14;
+  // Table header
   doc.setFillColor(...DARK_BLUE);
-  doc.rect(rightX, ry, rightColW, 18, 'F');
-  doc.setFontSize(8);
+  doc.rect(rightX, ry, rightColW, 16, 'F');
+  doc.setFontSize(7.5);
   doc.setTextColor(...WHITE);
   doc.setFont('helvetica', 'bold');
-  doc.text('Method', rightX + 8, ry + 12);
-  doc.text('Signal', rightX + rightColW * 0.55, ry + 12);
-  doc.text('Conf.', rightX + rightColW - 10, ry + 12, { align: 'right' });
+  doc.text('Method', rightX + 8, ry + 11);
+  doc.text('Signal', rightX + rightColW * 0.55, ry + 11);
+  doc.text('Confidence', rightX + rightColW - 8, ry + 11, { align: 'right' });
 
-  ry += 18;
+  ry += 16;
   const methods = [
-    { name: 'Price Sustainability', signal: gann.rallyAngle.riskLevel === 'LOW' ? 'BUY' : 'HOLD', conf: `${100 - (gann.rallyAngle.riskLevel === 'LOW' ? 20 : 40)}%` },
+    { name: 'Price Sustainability', signal: gann.rallyAngle.riskLevel === 'LOW' ? 'BUY' : gann.rallyAngle.riskLevel === 'HIGH' ? 'SELL' : 'HOLD', conf: `${100 - (gann.rallyAngle.riskLevel === 'LOW' ? 20 : 40)}%` },
     { name: 'Market Phase', signal: ney.signal, conf: `${ney.confidence}%` },
   ];
 
   methods.forEach((met, i) => {
     const rowBg = i % 2 === 0 ? LIGHTEST_GREY : WHITE;
     doc.setFillColor(rowBg[0], rowBg[1], rowBg[2]);
-    doc.rect(rightX, ry, rightColW, 16, 'F');
+    doc.rect(rightX, ry, rightColW, 15, 'F');
     doc.setFontSize(8);
     doc.setTextColor(...DARK_GREY);
     doc.setFont('helvetica', 'normal');
-    doc.text(met.name, rightX + 8, ry + 11);
-    const sigColor = met.signal === 'BUY' ? GREEN : met.signal === 'SELL' ? RED : MED_GREY;
+    doc.text(met.name, rightX + 8, ry + 10);
+    const sigColor = met.signal === 'BUY' ? GREEN : met.signal === 'SELL' ? RED : AMBER;
     doc.setTextColor(sigColor[0], sigColor[1], sigColor[2]);
     doc.setFont('helvetica', 'bold');
-    doc.text(met.signal, rightX + rightColW * 0.55, ry + 11);
+    doc.text(met.signal, rightX + rightColW * 0.55, ry + 10);
     doc.setTextColor(...DARK_GREY);
-    doc.text(met.conf, rightX + rightColW - 10, ry + 11, { align: 'right' });
-    ry += 16;
+    doc.setFont('helvetica', 'normal');
+    doc.text(met.conf, rightX + rightColW - 8, ry + 10, { align: 'right' });
+    ry += 15;
   });
 
-  // Overall agreement
+  // Overall agreement bar
   ry += 4;
-  doc.setFillColor(...LIGHT_BLUE);
-  doc.roundedRect(rightX, ry, rightColW, 22, 3, 3, 'F');
-  doc.setFontSize(9);
+  doc.setFillColor(235, 245, 255);
+  doc.roundedRect(rightX, ry, rightColW, 20, 3, 3, 'F');
+  doc.setFontSize(8.5);
   doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'normal');
-  doc.text('Overall Agreement:', rightX + 10, ry + 15);
-  doc.setFontSize(14);
+  doc.text('Overall Agreement', rightX + 10, ry + 13);
+  doc.setFontSize(13);
   doc.setTextColor(...PRIMARY_BLUE);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${agreement}%`, rightX + rightColW - 15, ry + 16, { align: 'right' });
+  doc.text(`${agreement}%`, rightX + rightColW - 10, ry + 14, { align: 'right' });
 
-  // ── Below chart: Trading Parameters row ──
-  const belowY = contentTop + chartH + 15;
-
-  // Entry / Target / Stop boxes
-  const boxW = (pw - 2 * m - 20) / 3;
-  const boxH = 55;
+  // ── Below chart: Trading Parameters ──
+  const belowY = contentTop + chartH + 12;
+  const boxGap = 12;
+  const boxW = (pw - 2 * m - 2 * boxGap) / 3;
+  const boxH = 48;
 
   // Entry Zone
   doc.setFillColor(...GREEN);
-  doc.roundedRect(m, belowY, boxW, boxH, 4, 4, 'F');
-  doc.setFontSize(8);
-  doc.setTextColor(...WHITE);
+  doc.roundedRect(m, belowY, boxW, boxH, 3, 3, 'F');
+  doc.setFontSize(7);
+  doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'normal');
-  doc.text('ENTRY ZONE', m + boxW / 2, belowY + 15, { align: 'center' });
-  doc.setFontSize(14);
+  doc.text('ENTRY ZONE', m + boxW / 2, belowY + 14, { align: 'center' });
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text(`$${(currentPrice * 0.98).toFixed(2)} – $${(currentPrice * 1.02).toFixed(2)}`, m + boxW / 2, belowY + 35, { align: 'center' });
+  doc.text(`$${(currentPrice * 0.98).toFixed(2)} – $${(currentPrice * 1.02).toFixed(2)}`, m + boxW / 2, belowY + 32, { align: 'center' });
 
-  // Target
+  // Target Price
   doc.setFillColor(...PRIMARY_BLUE);
-  doc.roundedRect(m + boxW + 10, belowY, boxW, boxH, 4, 4, 'F');
-  doc.setFontSize(8);
-  doc.setTextColor(...WHITE);
+  doc.roundedRect(m + boxW + boxGap, belowY, boxW, boxH, 3, 3, 'F');
+  doc.setFontSize(7);
+  doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'normal');
-  doc.text('TARGET PRICE', m + boxW + 10 + boxW / 2, belowY + 15, { align: 'center' });
-  doc.setFontSize(14);
+  doc.text('TARGET PRICE', m + boxW + boxGap + boxW / 2, belowY + 14, { align: 'center' });
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text(`$${targetPrice.toFixed(2)}  (+${upside}%)`, m + boxW + 10 + boxW / 2, belowY + 35, { align: 'center' });
+  doc.text(`$${targetPrice.toFixed(2)}  (+${upside}%)`, m + boxW + boxGap + boxW / 2, belowY + 32, { align: 'center' });
 
   // Stop Loss
   doc.setFillColor(...RED);
-  doc.roundedRect(m + 2 * (boxW + 10), belowY, boxW, boxH, 4, 4, 'F');
-  doc.setFontSize(8);
-  doc.setTextColor(...WHITE);
+  doc.roundedRect(m + 2 * (boxW + boxGap), belowY, boxW, boxH, 3, 3, 'F');
+  doc.setFontSize(7);
+  doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'normal');
-  doc.text('STOP LOSS', m + 2 * (boxW + 10) + boxW / 2, belowY + 15, { align: 'center' });
-  doc.setFontSize(14);
+  doc.text('STOP LOSS', m + 2 * (boxW + boxGap) + boxW / 2, belowY + 14, { align: 'center' });
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text(`$${stopLoss.toFixed(2)}  (–${downside}%)`, m + 2 * (boxW + 10) + boxW / 2, belowY + 35, { align: 'center' });
+  doc.text(`$${stopLoss.toFixed(2)}  (–${downside}%)`, m + 2 * (boxW + boxGap) + boxW / 2, belowY + 32, { align: 'center' });
 
-  // ── Support / Resistance row ──
-  const levelsY = belowY + boxH + 10;
-  doc.setFontSize(8);
+  // ── Support / Resistance + Analysis text ──
+  const infoY = belowY + boxH + 10;
+
+  // Support levels
+  doc.setFontSize(7.5);
   doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'bold');
-  doc.text('Support:', m, levelsY);
+  doc.text('Support:', m, infoY);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...MED_GREY);
-  const supportStr = supportLevels.map(l => `$${l.level.toFixed(2)}`).join('   ') || 'N/A';
-  doc.text(supportStr, m + 45, levelsY);
+  const supportStr = supportLevels.map(l => `$${l.level.toFixed(2)}`).join('    ') || 'N/A';
+  doc.text(supportStr, m + 42, infoY);
 
+  // Resistance levels
   doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'bold');
-  doc.text('Resistance:', pw / 2, levelsY);
+  doc.text('Resistance:', pw / 2 - 20, infoY);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...MED_GREY);
-  const resistStr = resistanceLevels.map(l => `$${l.level.toFixed(2)}`).join('   ') || 'N/A';
-  doc.text(resistStr, pw / 2 + 55, levelsY);
+  const resistStr = resistanceLevels.map(l => `$${l.level.toFixed(2)}`).join('    ') || 'N/A';
+  doc.text(resistStr, pw / 2 + 35, infoY);
 
-  // ── Reasoning ──
-  const reasonY = levelsY + 16;
-  doc.setFontSize(8);
+  // Analysis reasoning
+  const reasonY = infoY + 14;
+  doc.setFontSize(7.5);
   doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'bold');
   doc.text('Analysis:', m, reasonY);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...MED_GREY);
   const reasonLines = doc.splitTextToSize(recommendation.reasoning, pw - 2 * m - 50);
-  doc.text(reasonLines.slice(0, 3), m + 48, reasonY);
+  doc.text(reasonLines.slice(0, 3), m + 45, reasonY);
 
   drawFooter(1);
 
   // ═══════════════════════════════════════════════════════
-  // PAGE 2: Company Profile + Bull/Bear + Disclaimer
+  // PAGE 2: COMPANY PROFILE & INVESTMENT THESIS
   // ═══════════════════════════════════════════════════════
   doc.addPage();
   drawPageBg();
 
   // ── Header bar ──
   doc.setFillColor(...DARK_BLUE);
-  doc.rect(0, 0, pw, 40, 'F');
-  doc.setFontSize(14);
+  doc.rect(0, 0, pw, 42, 'F');
+  doc.setFontSize(13);
   doc.setTextColor(...WHITE);
   doc.setFont('helvetica', 'bold');
-  doc.text('COMPANY PROFILE & INVESTMENT THESIS', m, 26);
-  doc.setFontSize(10);
-  doc.text(`${symbol}  •  ${dateStr}`, pw - m, 26, { align: 'right' });
+  doc.text('COMPANY PROFILE & INVESTMENT THESIS', m, 27);
+  doc.setFontSize(9);
+  doc.setTextColor(180, 200, 220);
+  doc.text(dateStr, pw - m, 27, { align: 'right' });
 
-  // ── Company info ──
-  y = 60;
+  // ── Company info section ──
+  y = 58;
 
-  // Logo
-  if (logoBase64) {
-    try { doc.addImage(logoBase64, 'PNG', m, y, 45, 45); } catch {}
-  }
-  const compX = logoBase64 ? m + 55 : m;
-
-  doc.setFontSize(18);
+  // Company name + sector (no duplicate ticker)
+  doc.setFontSize(16);
   doc.setTextColor(...BLACK);
   doc.setFont('helvetica', 'bold');
-  doc.text(displayName, compX, y + 15);
+  doc.text(displayName !== symbol ? displayName : symbol, m, y + 12);
 
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(...MED_GREY);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${sector}  •  ${industry}  •  ${symbol}`, compX, y + 32);
+  doc.text(`${symbol}  |  ${sector}  |  ${industry}`, m, y + 28);
 
   // Business summary
-  y += 55;
+  y += 42;
   if (businessSummary) {
-    doc.setFontSize(9);
+    doc.setDrawColor(...LIGHTER_GREY);
+    doc.setLineWidth(0.5);
+    doc.line(m, y - 4, pw - m, y - 4);
+
+    doc.setFontSize(8.5);
     doc.setTextColor(...DARK_GREY);
     doc.setFont('helvetica', 'normal');
     const summaryLines = doc.splitTextToSize(businessSummary, pw - 2 * m);
-    doc.text(summaryLines.slice(0, 5), m, y);
-    y += Math.min(summaryLines.length, 5) * 12 + 10;
+    doc.text(summaryLines.slice(0, 6), m, y + 8);
+    y += Math.min(summaryLines.length, 6) * 11 + 16;
   }
 
   // ── Key Stats bar ──
   doc.setFillColor(...LIGHTEST_GREY);
-  doc.roundedRect(m, y, pw - 2 * m, 35, 3, 3, 'F');
+  doc.roundedRect(m, y, pw - 2 * m, 32, 3, 3, 'F');
 
-  const statW = (pw - 2 * m) / 5;
-  const statsData = [
+  const statItems = [
     { label: 'Price', value: `$${currentPrice.toFixed(2)}` },
     { label: '52W High', value: `$${high52Week.toFixed(2)}` },
     { label: '52W Low', value: `$${low52Week.toFixed(2)}` },
     { label: 'Phase', value: ney.phase },
     { label: 'Risk', value: combinedRisk },
+    { label: 'Signal', value: recommendation.action },
   ];
 
-  statsData.forEach((s, i) => {
+  const statW = (pw - 2 * m) / statItems.length;
+  statItems.forEach((s, i) => {
     const sx = m + i * statW + statW / 2;
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(...MED_GREY);
     doc.setFont('helvetica', 'normal');
-    doc.text(s.label, sx, y + 13, { align: 'center' });
-    doc.setFontSize(11);
-    doc.setTextColor(...DARK_BLUE);
+    doc.text(s.label.toUpperCase(), sx, y + 12, { align: 'center' });
+    doc.setFontSize(10);
+    const valColor = s.label === 'Signal' ? getActionColor(s.value) :
+                     s.label === 'Risk' ? getRiskColor(s.value) : DARK_BLUE;
+    doc.setTextColor(valColor[0], valColor[1], valColor[2]);
     doc.setFont('helvetica', 'bold');
-    doc.text(s.value, sx, y + 27, { align: 'center' });
+    doc.text(s.value, sx, y + 25, { align: 'center' });
   });
 
-  y += 50;
+  y += 44;
 
-  // ── Bull vs Bear cases side by side ──
-  const caseW = (pw - 3 * m) / 2;
-  const caseH = 160;
+  // ── Bull vs Bear cases ──
+  const caseGap = 20;
+  const caseW = (pw - 2 * m - caseGap) / 2;
+  const caseH = 170;
 
   // Bull Case
-  doc.setFillColor(240, 255, 240);
+  doc.setFillColor(242, 252, 245);
   doc.roundedRect(m, y, caseW, caseH, 4, 4, 'F');
   doc.setDrawColor(...GREEN);
-  doc.setLineWidth(1.5);
+  doc.setLineWidth(2);
   doc.line(m, y, m + caseW, y);
 
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setTextColor(...GREEN);
   doc.setFont('helvetica', 'bold');
-  doc.text('BULL CASE', m + 12, y + 20);
+  doc.text('BULL CASE', m + 12, y + 18);
 
   doc.setFontSize(8);
   doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'normal');
   const bullPts = [
-    `Price at $${currentPrice.toFixed(2)} vs sustainable $${sustainablePrice.toFixed(2)}`,
-    `${agreement}% method agreement supports position`,
-    `Target: $${targetPrice.toFixed(2)} (+${upside}% upside)`,
-    `Risk/reward ratio: ${riskReward}:1`,
-    `${ney.phase} phase indicates opportunity`,
+    `Trading at $${currentPrice.toFixed(2)} vs sustainable price of $${sustainablePrice.toFixed(2)}`,
+    `${agreement}% method agreement supports current position`,
+    `Target price: $${targetPrice.toFixed(2)} representing +${upside}% upside`,
+    `Risk/reward ratio of ${riskReward}:1`,
+    `${ney.phase} phase suggests favorable conditions`,
   ];
   bullPts.forEach((pt, i) => {
-    doc.text(`•  ${pt}`, m + 12, y + 38 + i * 22);
+    doc.text(`-  ${pt}`, m + 12, y + 36 + i * 24);
   });
 
   // Bear Case
-  doc.setFillColor(255, 240, 240);
-  doc.roundedRect(m + caseW + m, y, caseW, caseH, 4, 4, 'F');
+  doc.setFillColor(255, 243, 243);
+  doc.roundedRect(m + caseW + caseGap, y, caseW, caseH, 4, 4, 'F');
   doc.setDrawColor(...RED);
-  doc.setLineWidth(1.5);
-  doc.line(m + caseW + m, y, m + caseW + m + caseW, y);
+  doc.setLineWidth(2);
+  doc.line(m + caseW + caseGap, y, m + caseW + caseGap + caseW, y);
 
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setTextColor(...RED);
   doc.setFont('helvetica', 'bold');
-  doc.text('BEAR CASE', m + caseW + m + 12, y + 20);
+  doc.text('BEAR CASE', m + caseW + caseGap + 12, y + 18);
 
   doc.setFontSize(8);
   doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'normal');
   const bearPts = [
-    'Market conditions may deteriorate',
-    'Sector rotation could impact performance',
-    `Stop loss at $${stopLoss.toFixed(2)} (–${downside}% risk)`,
-    'External macro factors uncertain',
-    'Technical resistance may hold',
+    'Broader market conditions may deteriorate',
+    'Sector rotation could negatively impact performance',
+    `Stop loss at $${stopLoss.toFixed(2)} represents –${downside}% downside risk`,
+    'External macroeconomic factors remain uncertain',
+    'Technical resistance levels may limit upside',
   ];
   bearPts.forEach((pt, i) => {
-    doc.text(`•  ${pt}`, m + caseW + m + 12, y + 38 + i * 22);
+    doc.text(`-  ${pt}`, m + caseW + caseGap + 12, y + 36 + i * 24);
   });
 
   // ── Disclaimer ──
-  y += caseH + 15;
+  y += caseH + 10;
   doc.setFillColor(...LIGHTEST_GREY);
-  doc.roundedRect(m, y, pw - 2 * m, 70, 3, 3, 'F');
+  doc.roundedRect(m, y, pw - 2 * m, 62, 3, 3, 'F');
 
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(...DARK_GREY);
   doc.setFont('helvetica', 'bold');
-  doc.text('DISCLAIMER', m + 10, y + 14);
+  doc.text('DISCLAIMER', m + 10, y + 13);
 
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(...LIGHT_GREY);
   doc.setFont('helvetica', 'normal');
   const disclaimer = 'This report is for informational purposes only and does not constitute investment advice, an offer to sell, or a solicitation of an offer to buy any securities. Past performance is not indicative of future results. All investments involve risk, including potential loss of principal. The analysis presented is based on historical data and mathematical models which may not accurately predict future price movements. Investors should conduct their own due diligence and consult with qualified financial advisors before making investment decisions.';
   const discLines = doc.splitTextToSize(disclaimer, pw - 2 * m - 20);
-  doc.text(discLines, m + 10, y + 26);
+  doc.text(discLines, m + 10, y + 25);
 
   drawFooter(2);
 

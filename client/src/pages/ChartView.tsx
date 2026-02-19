@@ -229,7 +229,7 @@ export default function ChartView() {
             riskLevel: analysis.gann.riskLevel,
             signal: analysis.gann.riskLevel === 'LOW' ? 'BUY' : 'HOLD',
           },
-          squareOfNineLevels: analysis.gann.squareOfNineLevels.map(l => ({ level: l.level, type: l.type, description: l.type })),
+          squareOfNineLevels: analysis.gann.squareOfNineLevels.map(l => ({ level: l.price, type: l.type, description: l.type })),
         },
         ney: {
           phase: analysis.ney.currentPhase,

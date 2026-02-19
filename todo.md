@@ -546,3 +546,21 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Fixed 0-byte download issue (FileReader instead of blob URL)
 - [x] Test with AAPL - confirmed 2 pages, 1.2MB
 - [x] Save checkpoint
+
+
+## Phase 47: Refine PDF Export
+- [ ] Remove double ticker on first page
+- [ ] Polish layout with better spacing and typography
+- [ ] Improve visual hierarchy and readability
+- [ ] Test with multiple tickers
+- [ ] Save checkpoint
+
+
+## Phase 48: Fix Company Name Display Bug
+- [x] Identified root cause: Yahoo Finance get_stock_profile API only returns summaryProfile, not quoteType with longName
+- [x] Updated server/lib/stockData.ts getCompanyProfile() to fetch company name from get_stock_chart API's meta.longName/shortName
+- [x] Verified company name displays correctly in UI header ("Apple Inc. • Technology • β: 1.26")
+- [x] Verified company name appears correctly on PDF page 1 header ("AAPL Apple Inc.")
+- [x] Verified company name appears correctly on PDF page 2 ("Apple Inc." with full profile)
+- [x] Removed all debug alert() calls from ChartView.tsx and clientPdfGenerator.ts
+- [x] Save checkpoint
