@@ -247,15 +247,17 @@ export default function ChartView() {
         logoBase64,
       });
       
-      // Download the PDF
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${symbol}InvestmentAnalysis.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      // Download the PDF - use FileReader to ensure blob is fully ready
+      const reader = new FileReader();
+      reader.onload = () => {
+        const a = document.createElement('a');
+        a.href = reader.result as string;
+        a.download = `${symbol}InvestmentAnalysis.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+      reader.readAsDataURL(pdfBlob);
       
       toast.dismiss(loadingToast);
       toast.success('Export complete!');
@@ -606,7 +608,7 @@ export default function ChartView() {
                   </svg>
                   <span className="text-orange-400">Download Analysis</span>
                 </Button>
-                <p className="text-xs text-slate-500 mt-2">5-page Investment Analysis PDF</p>
+                <p className="text-xs text-slate-500 mt-2">2-page Investment Analysis PDF</p>
               </div>
             </TabsContent>
 

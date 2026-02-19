@@ -529,9 +529,20 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 
 
 ## Phase 45: Fix Drawing Tools - Real Diagonal Trendlines
-- [ ] Remove duplicate click handler (container click + chart subscribeClick)
-- [ ] Add canvas overlay for diagonal trendline rendering
-- [ ] Convert trendline start/end to pixel coords using timeToCoordinate/priceToCoordinate
-- [ ] Redraw canvas on chart scroll/zoom
-- [ ] Test trendline, horizontal line, and fibonacci
-- [ ] Save checkpoint
+- [x] Remove duplicate click handler (container click + chart subscribeClick)
+- [x] Add canvas overlay for diagonal trendline rendering
+- [x] Convert trendline start/end to pixel coords using timeToCoordinate/priceToCoordinate
+- [x] Redraw canvas on chart scroll/zoom
+- [x] Test trendline, horizontal line, and fibonacci
+- [x] Save checkpoint
+
+
+## Phase 46: Polish PDF Export - 2 Pages
+- [x] Condense PDF from current layout to 2 pages
+- [x] Page 1: Title + Signal + Key Metrics + Chart + Price Analysis + Market Phase + Agreement
+- [x] Page 2: Company Profile + Investment Thesis (Bull/Bear) + Disclaimer
+- [x] Use Arial font throughout
+- [x] Professional layout with tight spacing
+- [x] Fixed 0-byte download issue (FileReader instead of blob URL)
+- [x] Test with AAPL - confirmed 2 pages, 1.2MB
+- [x] Save checkpoint
