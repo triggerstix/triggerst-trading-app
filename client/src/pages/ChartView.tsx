@@ -453,7 +453,7 @@ export default function ChartView() {
               <Star 
                 className={`w-4 h-4 ${isInWatchlistQuery.data ? 'fill-yellow-400 text-yellow-400' : ''}`}
               />
-              {isInWatchlistQuery.data ? 'Remove' : 'Watchlist'}
+              {isInWatchlistQuery.data ? 'Remove from watchlist' : 'Add to watchlist'}
             </Button>
 
             {/* Recommendation */}

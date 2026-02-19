@@ -590,3 +590,11 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [ ] Remove "Gann" from package.json and project metadata
 - [ ] Test app functionality after all renames
 - [ ] Save checkpoint
+
+
+## Phase 50: Fix History & Watchlist Visibility & Spelling
+- [x] Investigate History and My Watchlist visibility on desktop
+- [x] Fix CSS/responsive design issues causing visibility problems (added sticky header, responsive text, better spacing)
+- [x] Standardize spelling: "watchlist" (one word, lowercase) throughout app
+- [x] Updated watchlist button text from "Watchlist" to "Add to watchlist" / "Remove from watchlist"
+- [x] Test visibility on desktop - buttons now visible with improved styling

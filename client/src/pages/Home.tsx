@@ -32,25 +32,25 @@ export default function Home() {
     <div className="min-h-screen bg-[#0a0e27] text-white">
       {/* Header */}
       {user && (
-        <div className="border-b border-slate-800 bg-[#0d1129]">
-          <div className="container mx-auto px-4 py-3 flex justify-end">
+        <div className="border-b border-slate-800 bg-[#0d1129] sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-3 flex justify-end gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setLocation("/history")}
-              className="text-slate-400 hover:text-white flex items-center gap-2"
+              className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
             >
               <Clock className="w-4 h-4" />
-              History
+              <span className="hidden sm:inline">History</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setLocation("/watchlist")}
-              className="text-slate-400 hover:text-white flex items-center gap-2"
+              className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
             >
               <Star className="w-4 h-4" />
-              My Watchlist
+              <span className="hidden sm:inline">My Watchlist</span>
             </Button>
           </div>
         </div>
