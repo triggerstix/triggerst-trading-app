@@ -41,7 +41,7 @@ export default function Home() {
               className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
             >
               <Clock className="w-4 h-4" />
-              <span className="hidden sm:inline">History</span>
+              <span>History</span>
             </Button>
             <Button
               variant="ghost"
@@ -50,7 +50,7 @@ export default function Home() {
               className="text-slate-400 hover:text-white hover:bg-slate-800 flex items-center gap-2 whitespace-nowrap"
             >
               <Star className="w-4 h-4" />
-              <span className="hidden sm:inline">My Watchlist</span>
+              <span>My Watchlist</span>
             </Button>
           </div>
         </div>

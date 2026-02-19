@@ -598,3 +598,4 @@ Note: Timeframe data fetching with different intervals (1D vs 1Y granularity) re
 - [x] Standardize spelling: "watchlist" (one word, lowercase) throughout app
 - [x] Updated watchlist button text from "Watchlist" to "Add to watchlist" / "Remove from watchlist"
 - [x] Test visibility on desktop - buttons now visible with improved styling
+- [x] Removed responsive text hiding to show History and My Watchlist text on all screen sizes
