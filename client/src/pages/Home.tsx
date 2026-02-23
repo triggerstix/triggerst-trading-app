@@ -75,10 +75,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-8 pb-2 bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            Triggerstix Trading Analysis
+            Triggerstix
           </h1>
           <p className="text-xl text-slate-300 mb-8">
-            Advanced market analysis combining price sustainability metrics with institutional activity tracking
+            Two independent systems. One high-conviction signal.
           </p>
 
           {/* Search */}
@@ -153,7 +153,7 @@ export default function Home() {
         <div className="mt-20 max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-3 text-blue-400">Price Sustainability</h3>
+              <h3 className="text-xl font-semibold mb-3 text-blue-400">System 1 — Mathematical Price Analysis</h3>
               <ul className="space-y-2 text-slate-300">
                 <li>• Geometric price relationships</li>
                 <li>• Key support/resistance levels</li>
@@ -162,7 +162,7 @@ export default function Home() {
               </ul>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-3 text-cyan-400">Institutional Activity</h3>
+              <h3 className="text-xl font-semibold mb-3 text-cyan-400">System 2 — Institutional Positioning Analysis</h3>
               <ul className="space-y-2 text-slate-300">
                 <li>• Market phase identification</li>
                 <li>• Smart money behavior tracking</li>
