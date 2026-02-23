@@ -614,7 +614,7 @@ export default function ChartView() {
             <TabsContent value="gann" className="p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
-                  PRICE ANGLES
+                  MATHEMATICAL ANGLES
                 </h3>
                 <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-3">
@@ -684,7 +684,7 @@ export default function ChartView() {
             <TabsContent value="ney" className="p-4 space-y-4">
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 mb-2">
-                  MARKET PHASE
+                  INSTITUTIONAL PHASE
                 </h3>
                 <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
                   <div className="text-center mb-3">
