@@ -119,13 +119,13 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
       case 'fibonacci':
         const levels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
         const yDiff = p2.y - p1.y;
-        
+
         return (
           <g key={drawing.id}>
             {levels.map((level, idx) => {
               const y = p1.y + yDiff * level;
               const labelColor = level === 0.5 ? '#ef4444' : '#3b82f6';
-              
+
               return (
                 <g key={idx}>
                   <line
@@ -162,7 +162,7 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
     <div className="relative">
       {/* Toolbar */}
       <div className="absolute top-2 left-2 z-10 bg-slate-800 rounded-lg p-2 shadow-lg border border-slate-700">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button
             onClick={() => setActiveTool('trendline')}
             className={`px-3 py-2 rounded ${
@@ -214,6 +214,20 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
           >
             ↖️ Select
           </button>
+
+          {/* Divider */}
+          <div className="w-px h-6 bg-slate-600 mx-1" />
+
+          {/* Help button */}
+          <a
+            href="/help"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-100 transition-colors text-sm font-bold"
+            title="Drawing Tools Help"
+          >
+            ?
+          </a>
         </div>
       </div>
 
@@ -231,7 +245,7 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
       >
         {/* Render completed drawings */}
         {drawings.map(renderDrawing)}
-        
+
         {/* Render current drawing in progress */}
         {currentDrawing && renderDrawing(currentDrawing)}
       </svg>
@@ -249,4 +263,3 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
     </div>
   );
 };
-
