@@ -160,12 +160,12 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
 
   return (
     <div className="relative">
-      {/* Toolbar */}
+      {/* Vertical Toolbar */}
       <div className="absolute top-2 left-2 z-10 bg-slate-800 rounded-lg p-2 shadow-lg border border-slate-700">
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-col gap-2">
           <button
             onClick={() => setActiveTool('trendline')}
-            className={`px-3 py-2 rounded ${
+            className={`px-3 py-2 rounded text-left ${
               activeTool === 'trendline'
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
@@ -176,7 +176,7 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
           </button>
           <button
             onClick={() => setActiveTool('horizontal')}
-            className={`px-3 py-2 rounded ${
+            className={`px-3 py-2 rounded text-left ${
               activeTool === 'horizontal'
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
@@ -187,7 +187,7 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
           </button>
           <button
             onClick={() => setActiveTool('fibonacci')}
-            className={`px-3 py-2 rounded ${
+            className={`px-3 py-2 rounded text-left ${
               activeTool === 'fibonacci'
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
@@ -197,15 +197,8 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
             🔢 Fibonacci
           </button>
           <button
-            onClick={clearDrawings}
-            className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-            title="Clear All Drawings"
-          >
-            🗑️ Clear
-          </button>
-          <button
             onClick={() => setActiveTool('none')}
-            className={`px-3 py-2 rounded ${
+            className={`px-3 py-2 rounded text-left ${
               activeTool === 'none'
                 ? 'bg-green-600 text-white'
                 : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
@@ -214,19 +207,26 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({ width, height, onDra
           >
             ↖️ Select
           </button>
+          <button
+            onClick={clearDrawings}
+            className="px-3 py-2 rounded text-left bg-red-600 text-white hover:bg-red-700"
+            title="Clear All Drawings"
+          >
+            🗑️ Clear
+          </button>
 
           {/* Divider */}
-          <div className="w-px h-6 bg-slate-600 mx-1" />
+          <div className="h-px bg-slate-600 mx-1" />
 
           {/* Help button */}
           <a
             href="/help"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-100 transition-colors text-sm font-bold"
+            className="px-3 py-2 rounded text-left bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-100 transition-colors text-sm font-bold"
             title="Drawing Tools Help"
           >
-            ?
+            ❓ Help
           </a>
         </div>
       </div>
