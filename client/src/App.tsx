@@ -11,6 +11,7 @@ import StockAnalysisNew from "./pages/StockAnalysisNew";
 import StockAnalysisSearch from "./pages/StockAnalysisSearch";
 import ChartOnly from "./pages/ChartOnly";
 import History from "./pages/History";
+import HelpPage from "./pages/HelpPage";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/chart-only/:symbol" component={ChartOnly} />
       <Route path="/watchlist" component={Watchlist} />
       <Route path="/history" component={History} />
+      <Route path="/help" component={HelpPage} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -41,4 +43,3 @@ function App() {
 }
 
 export default App;
-
