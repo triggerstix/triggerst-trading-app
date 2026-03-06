@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
-import { Pencil, TrendingUp, Trash2, Minus, MousePointer2, Type, Ruler, ZoomIn, ZoomOut, Crosshair, BarChart3, Activity, X } from 'lucide-react';
+import { Pencil, TrendingUp, Trash2, Minus, MousePointer2, Type, Ruler, ZoomIn, ZoomOut, Crosshair, BarChart3, Activity, X, HelpCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 
@@ -776,6 +776,16 @@ export default function InteractiveChart({
             <Trash2 className="w-4 h-4" />
           </button>
         )}
+        <div className="border-t border-slate-700 w-6 my-1" />
+        <a
+          href="/help"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-2 rounded text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          title="Drawing Tools Help"
+        >
+          <HelpCircle className="w-4 h-4" />
+        </a>
       </div>
 
       {/* Main chart area */}
